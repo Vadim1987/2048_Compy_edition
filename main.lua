@@ -29,7 +29,6 @@ Game = {
   empty_count = 0
 }
 
-MoveTable = { }
 KeyPress = { }
 gfx = love.graphics
 
@@ -67,9 +66,6 @@ end
 
 -- add one random 2 or 4
 function game_add_random_tile()
-  if Game.empty_count == 0 then
-    return
-  end
   target = love.math.random(Game.empty_count)
   row, col = find_empty_by_index(target)
   if row then
@@ -87,31 +83,42 @@ function game_reset()
   Game.state = "play"
 end
 
+-- read and modify board
+function get_value(indices, index)
+  local row, col = indices(index)
+  return Game.cells[row][col]
+end
+function set_value(indices, index, value)
+  local row, col = indices(index)
+  Game.cells[row][col] = value
+end
+
 -- compact line in-place via accessors
-function compact_line(get_value, set_value, size)
-  local moved = false
-  local write = 1
+function compact_line(indices, size)
+  local moved, write = false, 1
   for index = 1, size do
-    local value = get_value(index)
-    if value ~= nil then
-      if index ~= write then moved = true end
-      set_value(write, value); 
+    local value = get_value(indices, index)
+    if value then
+      moved = moved or index ~= write
+      set_value(indices, write, value)
       write = write + 1
     end
   end
-  for index = write, size do 
-    set_value(index, nil) end
+  for index = write, size do
+    set_value(indices, index, nil)
+  end
   return moved
 end
 
 -- merge equal neighbours in-place, update score/empty_count
-function merge_line(get_value, set_value, size)
+function merge_line(indices, size)
   local moved = false
   for index = 1, size - 1 do
-    local value = get_value(index)
-    if value ~= nil and get_value(index + 1) == value then
+    local value = get_value(indices, index)
+    if value and get_value(indices, index + 1) == value then
       local merged = value + value
-      set_value(index, merged); set_value(index + 1, nil)
+      set_value(indices, index, merged)
+      set_value(indices, index + 1, nil)
       Game.score = Game.score + merged
       Game.empty_count = Game.empty_count + 1
       moved = true
@@ -121,73 +128,47 @@ function merge_line(get_value, set_value, size)
 end
 
 -- full move on abstract line via accessors
-function line_move(get_value, set_value, size)
-  local moved = compact_line(get_value, set_value, size)
-  if merge_line(get_value, set_value, size) 
-  then moved = true end
-  if compact_line(get_value, set_value, size) 
-  then moved = true end
-  return moved
-end
-
--- map 1..size index to forward / reverse coordinate
-function line_index(index, size, reverse)
-  if reverse then
-    return size - index + 1
+function line_move(indices, size)
+  local moved = compact_line(indices, size)
+  if merge_line(indices, size) then
+    moved = true
   end
-  return index
+  if compact_line(indices, size) then
+    moved = true
+  end
+  return moved
 end
 
 -- apply left move to one row
 function line_apply_row_left(row)
-  local function get_value(index)
-    local col = line_index(index, Game.cols, false)
-    return Game.cells[row][col]
+  local function indices(index)
+    return row, index
   end
-  local function set_value(index, value)
-    local col = line_index(index, Game.cols, false)
-    Game.cells[row][col] = value
-  end
-  return line_move(get_value, set_value, Game.cols)
+  return line_move(indices, Game.cols)
 end
 
 -- apply right move to one row
 function line_apply_row_right(row)
-  local function get_value(index)
-    local col = line_index(index, Game.cols, true)
-    return Game.cells[row][col]
+  local function indices(index)
+    return row, Game.cols - index + 1
   end
-  local function set_value(index, value)
-    local col = line_index(index, Game.cols, true)
-    Game.cells[row][col] = value
-  end
-  return line_move(get_value, set_value, Game.cols)
+  return line_move(indices, Game.cols)
 end
 
 -- apply up move to one column
 function line_apply_col_up(col)
-  local function get_value(index)
-    local row = line_index(index, Game.rows, false)
-    return Game.cells[row][col]
+  local function indices(index)
+    return index, col
   end
-  local function set_value(index, value)
-    local row = line_index(index, Game.rows, false)
-    Game.cells[row][col] = value
-  end
-  return line_move(get_value, set_value, Game.rows)
+  return line_move(indices, Game.rows)
 end
 
 -- apply down move to one column
 function line_apply_col_down(col)
-  local function get_value(index)
-    local row = line_index(index, Game.rows, true)
-    return Game.cells[row][col]
+  local function indices(index)
+    return Game.rows - index + 1, col
   end
-  local function set_value(index, value)
-    local row = line_index(index, Game.rows, true)
-    Game.cells[row][col] = value
-  end
-  return line_move(get_value, set_value, Game.rows)
+  return line_move(indices, Game.rows)
 end
 
 -- move the whole board
@@ -202,39 +183,38 @@ function move_board(line_apply, lines)
 end
 
 -- move left on whole board
-function MoveTable.left()
+function move_left()
   return move_board(line_apply_row_left, Game.rows)
 end
 
 -- move right on whole board
-function MoveTable.right()
+function move_right()
   return move_board(line_apply_row_right, Game.rows)
 end
 
 -- move up on whole board
-function MoveTable.up()
+function move_up()
   return move_board(line_apply_col_up, Game.cols)
 end
 
 -- move down on whole board
-function MoveTable.down()
+function move_down()
   return move_board(line_apply_col_down, Game.cols)
 end
 
--- check for empty cell
-function game_has_empty()
-  return Game.empty_count > 0
-end
-
--- true if at least one merge is possible
+-- true if at least one merge is possible on a full board
 function game_can_merge()
-  for row = 1, Game.rows do
-    for col = 1, Game.cols do
-      if Game.cells[row][col] and 
-         ((col < Game.cols and 
-         Game.cells[row][col] == Game.cells[row][col + 1])
-          or (row < Game.rows and 
-          Game.cells[row][col] == Game.cells[row + 1][col])) then
+  local cells, rows, cols = Game.cells, Game.rows, Game.cols
+  for row = 1, rows do
+    for col = 1, cols do
+      if (col < cols)
+           and (cells[row][col] == cells[row][col + 1])
+      then
+        return true
+      end
+      if (row < rows)
+           and (cells[row][col] == cells[row + 1][col])
+      then
         return true
       end
     end
@@ -242,22 +222,14 @@ function game_can_merge()
   return false
 end
 
--- true when no moves left
-function game_is_over()
-  return not (game_has_empty() or game_can_merge())
-end
-
 -- run one move in a given direction
-function game_handle_move(dir)
-  move_func = MoveTable[dir]
-  if not move_func then
-    return
-  end
+function game_handle_move(move_func)
   if move_func() then
     game_add_random_tile()
-    if game_is_over() then
-      Game.state = "gameover"
+    if (0 < Game.empty_count) or game_can_merge() then
+      return
     end
+    Game.state = "gameover"
   end
 end
 
@@ -275,16 +247,16 @@ end
 
 -- draw a single tile
 function draw_cell(row, col, value)
-  x = BOARD_LEFT + (col - 1) * CELL_SIZE
-  y = BOARD_TOP  + (row - 1) * CELL_SIZE
-  size = CELL_SIZE - CELL_GAP
-  if value ~= nil then
+  local x = BOARD_LEFT + (col - 1) * CELL_SIZE
+  local y = BOARD_TOP + (row - 1) * CELL_SIZE
+  local size = CELL_SIZE - CELL_GAP
+  if value then
     gfx.setColor(COLOR_TILE_BG)
   else
     gfx.setColor(COLOR_EMPTY)
   end
   gfx.rectangle("fill", x, y, size, size)
-  if value ~= nil then
+  if value then
     gfx.setColor(COLOR_TILE_FG)
     gfx.print(value, x + 10, y + 10)
   end
@@ -307,33 +279,27 @@ end
 
 -- keyboard handlers
 function KeyPress.left()
-  game_handle_move("left")
+  game_handle_move(move_left)
 end
 
 function KeyPress.right()
-  game_handle_move("right")
+  game_handle_move(move_right)
 end
 
 function KeyPress.up()
-  game_handle_move("up")
+  game_handle_move(move_up)
 end
 
 function KeyPress.down()
-  game_handle_move("down")
+  game_handle_move(move_down)
 end
 
 KeyPress.a = KeyPress.left
 KeyPress.d = KeyPress.right
 KeyPress.w = KeyPress.up
 KeyPress.s = KeyPress.down
-
-function KeyPress.escape()
-  love.event.quit()
-end
-
-function KeyPress.r()
-  game_reset()
-end
+KeyPress.escape = love.event.quit
+KeyPress.r = game_reset
 
 -- keyboard input
 function love.keypressed(key)
