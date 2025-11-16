@@ -92,18 +92,15 @@ end
 function set_value(indices, index, value)
   local row, col = indices(index)
   Game.cells[row][col] = value
-end  
+end
 
 -- compact line in-place via accessors
 function compact_line(indices, size)
-  local moved = false
-  local write = 1
+  local moved, write = false, 1
   for index = 1, size do
     local value = get_value(indices, index)
     if value then
-      if index ~= write then
-        moved = true
-      end
+      moved = moved or index ~= write
       set_value(indices, write, value)
       write = write + 1
     end
@@ -211,11 +208,13 @@ function game_can_merge()
   local cells, rows, cols = Game.cells, Game.rows, Game.cols
   for row = 1, rows do
     for col = 1, cols do
-      if (col < cols) and (cells[row][col] == cells[row][col + 1])
+      if (col < cols)
+           and (cells[row][col] == cells[row][col + 1])
       then
         return true
       end
-      if (row < rows) and (cells[row][col] == cells[row + 1][col])
+      if (row < rows)
+           and (cells[row][col] == cells[row + 1][col])
       then
         return true
       end
@@ -250,16 +249,16 @@ end
 
 -- draw a single tile
 function draw_cell(row, col, value)
-  x = BOARD_LEFT + (col - 1) * CELL_SIZE
-  y = BOARD_TOP  + (row - 1) * CELL_SIZE
-  size = CELL_SIZE - CELL_GAP
-  if value ~= nil then
+  local x = BOARD_LEFT + (col - 1) * CELL_SIZE
+  local y = BOARD_TOP + (row - 1) * CELL_SIZE
+  local size = CELL_SIZE - CELL_GAP
+  if value then
     gfx.setColor(COLOR_TILE_BG)
   else
     gfx.setColor(COLOR_EMPTY)
   end
   gfx.rectangle("fill", x, y, size, size)
-  if value ~= nil then
+  if value then
     gfx.setColor(COLOR_TILE_FG)
     gfx.print(value, x + 10, y + 10)
   end
@@ -301,14 +300,8 @@ KeyPress.a = KeyPress.left
 KeyPress.d = KeyPress.right
 KeyPress.w = KeyPress.up
 KeyPress.s = KeyPress.down
-
-function KeyPress.escape()
-  love.event.quit()
-end
-
-function KeyPress.r()
-  game_reset()
-end
+KeyPress.escape = love.event.quit
+KeyPress.r = game_reset
 
 -- keyboard input
 function love.keypressed(key)
