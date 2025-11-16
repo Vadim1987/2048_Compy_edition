@@ -130,13 +130,23 @@ function line_move(get_value, set_value, size)
   return moved
 end
 
+-- map 1..size index to forward / reverse coordinate
+function line_index(index, size, reverse)
+  if reverse then
+    return size - index + 1
+  end
+  return index
+end
+
 -- apply left move to one row
 function line_apply_row_left(row)
   local function get_value(index)
-    return Game.cells[row][index]
+    local col = line_index(index, Game.cols, false)
+    return Game.cells[row][col]
   end
   local function set_value(index, value)
-    Game.cells[row][index] = value
+    local col = line_index(index, Game.cols, false)
+    Game.cells[row][col] = value
   end
   return line_move(get_value, set_value, Game.cols)
 end
@@ -144,11 +154,11 @@ end
 -- apply right move to one row
 function line_apply_row_right(row)
   local function get_value(index)
-    local col = Game.cols - index + 1
+    local col = line_index(index, Game.cols, true)
     return Game.cells[row][col]
   end
   local function set_value(index, value)
-    local col = Game.cols - index + 1
+    local col = line_index(index, Game.cols, true)
     Game.cells[row][col] = value
   end
   return line_move(get_value, set_value, Game.cols)
@@ -157,10 +167,12 @@ end
 -- apply up move to one column
 function line_apply_col_up(col)
   local function get_value(index)
-    return Game.cells[index][col]
+    local row = line_index(index, Game.rows, false)
+    return Game.cells[row][col]
   end
   local function set_value(index, value)
-    Game.cells[index][col] = value
+    local row = line_index(index, Game.rows, false)
+    Game.cells[row][col] = value
   end
   return line_move(get_value, set_value, Game.rows)
 end
@@ -168,11 +180,11 @@ end
 -- apply down move to one column
 function line_apply_col_down(col)
   local function get_value(index)
-    local row = Game.rows - index + 1
+    local row = line_index(index, Game.rows, true)
     return Game.cells[row][col]
   end
   local function set_value(index, value)
-    local row = Game.rows - index + 1
+    local row = line_index(index, Game.rows, true)
     Game.cells[row][col] = value
   end
   return line_move(get_value, set_value, Game.rows)
