@@ -29,7 +29,6 @@ Game = {
   empty_count = 0
 }
 
-MoveTable = { }
 KeyPress = { }
 gfx = love.graphics
 
@@ -184,22 +183,22 @@ function move_board(line_apply, lines)
 end
 
 -- move left on whole board
-function MoveTable.left()
+function move_left()
   return move_board(line_apply_row_left, Game.rows)
 end
 
 -- move right on whole board
-function MoveTable.right()
+function move_right()
   return move_board(line_apply_row_right, Game.rows)
 end
 
 -- move up on whole board
-function MoveTable.up()
+function move_up()
   return move_board(line_apply_col_up, Game.cols)
 end
 
 -- move down on whole board
-function MoveTable.down()
+function move_down()
   return move_board(line_apply_col_down, Game.cols)
 end
 
@@ -224,8 +223,7 @@ function game_can_merge()
 end
 
 -- run one move in a given direction
-function game_handle_move(dir)
-  move_func = MoveTable[dir]
+function game_handle_move(move_func)
   if move_func() then
     game_add_random_tile()
     if (0 < Game.empty_count) or game_can_merge() then
@@ -281,19 +279,19 @@ end
 
 -- keyboard handlers
 function KeyPress.left()
-  game_handle_move("left")
+  game_handle_move(move_left)
 end
 
 function KeyPress.right()
-  game_handle_move("right")
+  game_handle_move(move_right)
 end
 
 function KeyPress.up()
-  game_handle_move("up")
+  game_handle_move(move_up)
 end
 
 function KeyPress.down()
-  game_handle_move("down")
+  game_handle_move(move_down)
 end
 
 KeyPress.a = KeyPress.left
