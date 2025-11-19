@@ -37,6 +37,19 @@ Game = {
 KeyPress = { }
 gfx = love.graphics
 
+function draw_round_rect(x, y, size, radius)
+  local d = radius * 2
+  local x2 = x + size
+  local y2 = y + size
+  local two_pi = 2 * math.pi
+  gfx.rectangle("fill", x + radius, y, size - d, size)
+  gfx.rectangle("fill", x, y + radius, size, size - d)
+  gfx.arc("fill", x + radius, y + radius, radius, 0, two_pi)
+  gfx.arc("fill", x2 - radius, y + radius, radius, 0, two_pi)
+  gfx.arc("fill", x2 - radius, y2 - radius, radius, 0, two_pi)
+  gfx.arc("fill", x + radius, y2 - radius, radius, 0, two_pi)
+end
+
 -- reset board to empty state
 function game_clear()
   Game.empty_count = Game.rows * Game.cols
@@ -250,21 +263,18 @@ function draw_board_frame()
   )
 end
 
--- draw a single tile
 function draw_cell(row, col, value)
   local x = BOARD_LEFT + (col - 1) * CELL_SIZE
-  local y = BOARD_TOP + (row - 1) * CELL_SIZE
+  local y = BOARD_TOP  + (row - 1) * CELL_SIZE
   local size = CELL_SIZE - CELL_GAP
+  local radius = math.floor(size * 0.22 + 0.5)
   if value then
-    gfx.setColor(COLOR_TILE_BG)
-  else
-    gfx.setColor(COLOR_EMPTY)
-  end
-  gfx.rectangle("fill", x, y, size, size)
+    gfx.setColor(COLOR_TILE_BG) else
+    gfx.setColor(COLOR_EMPTY) end
+  draw_round_rect(x, y, size, radius)
   if value then
     gfx.setColor(COLOR_TILE_FG)
-    gfx.print(value, x + 10, y + 10)
-  end
+    gfx.print(value, x + 10, y + 10) end
 end
 
 -- draw whole board
