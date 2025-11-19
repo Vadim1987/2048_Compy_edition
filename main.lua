@@ -2,7 +2,7 @@
 
 -- current Compy “sans-like” font name
 Font = {
-  sans = "assets/fonts/SarasaGothicJ-Bold.ttf"
+  sans = "assets/fonts/NotoSansCJK-Regular.ttc"
 }
 
 -- board + text colors 
@@ -54,6 +54,8 @@ Game = {
 
 KeyPress = { }
 gfx = love.graphics
+tileFont = gfx.newFont(Font.sans, 28)  
+hudFont  = gfx.newFont(Font.sans, 22) 
 
 function draw_round_rect(x, y, size, radius)
   local d = radius * 2
@@ -289,15 +291,14 @@ function draw_cell(row, col, value)
   local y = BOARD_TOP  + (row - 1) * CELL_SIZE + CELL_OFFSET
   if not value then
     gfx.setColor(COLOR_EMPTY)
-    draw_round_rect(x, y, TILE_SIZE, TILE_RADIUS)
-    return
+    draw_round_rect(x, y, TILE_SIZE, TILE_RADIUS) return
   end
   gfx.setColor(TILE_BG[value])
   draw_round_rect(x, y, TILE_SIZE, TILE_RADIUS)
   if value == 2 or value == 4 then
-    gfx.setColor(COLOR_TILE_FG_DARK)
-  else
+    gfx.setColor(COLOR_TILE_FG_DARK) else
     gfx.setColor(COLOR_TILE_FG_LIGHT) end
+  gfx.setFont(tileFont)
   gfx.print(value, x + 10, y + 10)
 end
 
@@ -313,6 +314,7 @@ end
 -- draw score text
 function draw_score()
   gfx.setColor(COLOR_FG)
+  gfx.setFont(hudFont)
   gfx.print("Score: " .. Game.score, BOARD_LEFT, HUD_Y)
 end
 
