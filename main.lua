@@ -1,25 +1,43 @@
 -- main.lua
 
--- colors (Compy palette)
-COLOR_BG = Color[Color.black]
-COLOR_FG = Color[Color.white + Color.bright]
-COLOR_FRAME = Color[Color.cyan]
-COLOR_EMPTY = Color[Color.white]
-COLOR_TILE_BG = Color[Color.yellow]
-COLOR_TILE_FG = Color[Color.black]
-
 -- current Compy “sans-like” font name
 Font = {
   sans = "assets/fonts/SarasaGothicJ-Bold.ttf"
 }
 
+-- board + text colors 
+COLOR_BG    = {0, 0, 0}
+COLOR_BOARD = {0.545, 0.435, 0.278}
+COLOR_FRAME = COLOR_BOARD
+COLOR_EMPTY = {0.886, 0.835, 0.722}
+COLOR_TILE_FG_DARK  = {0.467, 0.431, 0.396}
+COLOR_TILE_FG_LIGHT = {0.976, 0.965, 0.949}
+COLOR_FG = COLOR_TILE_FG_DARK
+
+TILE_BG = {
+  [2] = {0.965, 0.910, 0.824},                 
+  [4] = {0.929, 0.878, 0.784},                 
+  [8] = {0.949, 0.694, 0.475},                 
+  [16] = {0.961, 0.584, 0.388},                 
+  [32] = {0.965, 0.486, 0.373},                 
+  [64] = {0.965, 0.369, 0.231},                 
+  [128] = {0.929, 0.812, 0.447},                
+  [256] = {0.929, 0.800, 0.380},                 
+  [512] = {0.929, 0.784, 0.314},                 
+  [1024] = {0.929, 0.773, 0.247},                 
+  [2048] = {0.929, 0.761, 0.180}                  
+}
+
 -- size from single base unit
 BASE_SIZE = 40
 GRID_SIZE = 4
-FRAME_THICK = BASE_SIZE
+FRAME_THICK = math.floor(BASE_SIZE * 0.25 + 0.5)
 CELL_SIZE = BASE_SIZE * 2
 CELL_GAP = math.floor(BASE_SIZE / 5 + 0.5)
-
+TILE_SIZE = CELL_SIZE - CELL_GAP
+CELL_OFFSET = math.floor(CELL_GAP / 2 + 0.5)
+TILE_CORNER = 0.22  
+TILE_RADIUS = math.floor(TILE_SIZE * TILE_CORNER + 0.5)
 BOARD_LEFT = FRAME_THICK
 BOARD_TOP = FRAME_THICK
 BOARD_WIDTH = GRID_SIZE * CELL_SIZE
@@ -254,27 +272,33 @@ end
 -- draw board frame with uniform thickness
 function draw_board_frame()
   gfx.setColor(COLOR_FRAME)
-  gfx.rectangle(
-    "fill",
-    BOARD_LEFT - FRAME_THICK,
+  gfx.rectangle("fill", BOARD_LEFT - FRAME_THICK,
     BOARD_TOP  - FRAME_THICK,
     BOARD_WIDTH  + FRAME_THICK * 2,
     BOARD_HEIGHT + FRAME_THICK * 2
   )
+  gfx.setColor(COLOR_BOARD)
+  gfx.rectangle("fill", BOARD_LEFT, BOARD_TOP,
+    BOARD_WIDTH,
+    BOARD_HEIGHT
+  )
 end
 
 function draw_cell(row, col, value)
-  local x = BOARD_LEFT + (col - 1) * CELL_SIZE
-  local y = BOARD_TOP  + (row - 1) * CELL_SIZE
-  local size = CELL_SIZE - CELL_GAP
-  local radius = math.floor(size * 0.22 + 0.5)
-  if value then
-    gfx.setColor(COLOR_TILE_BG) else
-    gfx.setColor(COLOR_EMPTY) end
-  draw_round_rect(x, y, size, radius)
-  if value then
-    gfx.setColor(COLOR_TILE_FG)
-    gfx.print(value, x + 10, y + 10) end
+  local x = BOARD_LEFT + (col - 1) * CELL_SIZE + CELL_OFFSET
+  local y = BOARD_TOP  + (row - 1) * CELL_SIZE + CELL_OFFSET
+  if not value then
+    gfx.setColor(COLOR_EMPTY)
+    draw_round_rect(x, y, TILE_SIZE, TILE_RADIUS)
+    return
+  end
+  gfx.setColor(TILE_BG[value])
+  draw_round_rect(x, y, TILE_SIZE, TILE_RADIUS)
+  if value == 2 or value == 4 then
+    gfx.setColor(COLOR_TILE_FG_DARK)
+  else
+    gfx.setColor(COLOR_TILE_FG_LIGHT) end
+  gfx.print(value, x + 10, y + 10)
 end
 
 -- draw whole board
