@@ -9,7 +9,7 @@ COLOR_TILE_BG = Color[Color.yellow]
 COLOR_TILE_FG = Color[Color.black]
 
 -- size from single base unit
-BASE_SIZE = 40
+BASE_SIZE = 56
 GRID_SIZE = 4
 FRAME_THICK = BASE_SIZE
 CELL_SIZE = BASE_SIZE * 2
@@ -35,7 +35,6 @@ gfx = love.graphics
 -- reset board to empty state
 function game_clear()
   Game.empty_count = Game.rows * Game.cols
-  Game.cells = { }
   for row = 1, Game.rows do
     Game.cells[row] = { }
   end
@@ -54,7 +53,7 @@ function find_empty_by_index(target)
   seen = 0
   for row = 1, Game.rows do
     for col = 1, Game.cols do
-      if Game.cells[row][col] == nil then
+      if not Game.cells[row][col] then
         seen = seen + 1
         if seen == target then
           return row, col
@@ -303,7 +302,7 @@ KeyPress.r = game_reset
 
 -- keyboard input
 function love.keypressed(key)
-  handler = KeyPress[key]
+  local handler = KeyPress[key]
   if handler then
     handler()
   end
@@ -311,7 +310,7 @@ end
 
 -- main draw
 function love.draw()
-  gfx.clear(COLOR_BG[1], COLOR_BG[2], COLOR_BG[3])
+  gfx.clear(COLOR_BG)
   draw_board_frame()
   draw_board()
   draw_score()
