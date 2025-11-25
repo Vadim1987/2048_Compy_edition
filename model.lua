@@ -22,7 +22,7 @@ TILE_TWO_PROBABILITY = 0.9
 function game_clear()
   Game.empty_count = Game.rows * Game.cols
   for row = 1, Game.rows do
-    Game.cells[row] = {}
+    Game.cells[row] = { }
   end
 end
 
