@@ -71,7 +71,7 @@ end
 -- apply right move to one row
 function line_apply_row_right(row)
   local function indices(index)
-    return row, Game.cols - index + 1
+    return row, (Game.cols - index) + 1
   end
   return line_move(indices, Game.cols)
 end
@@ -87,7 +87,7 @@ end
 -- apply down move to one column
 function line_apply_col_down(col)
   local function indices(index)
-    return Game.rows - index + 1, col
+    return (Game.rows - index) + 1, col
   end
   return line_move(indices, Game.rows)
 end
@@ -128,7 +128,7 @@ function game_handle_move(move_func)
   if move_func() then
     game_add_random_tile()
     if (0 < Game.empty_count) or game_can_merge() then
-      return
+      return 
     end
     Game.state = "gameover"
   end

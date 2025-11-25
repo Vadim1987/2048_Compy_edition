@@ -26,33 +26,101 @@ FRAME_CORNER_IN_RATIO = 0.3
 GAME_OVER_OFFSET_Y = 30
 
 -- colors
-COLOR_BG = {0, 0, 0}
-COLOR_BOARD = {0.733, 0.678, 0.627}
+COLOR_BG = {
+  0,
+  0,
+  0
+}
+COLOR_BOARD = {
+  0.733,
+  0.678,
+  0.627
+}
 COLOR_FRAME = COLOR_BOARD
-COLOR_EMPTY = {0.804, 0.757, 0.706}
+COLOR_EMPTY = {
+  0.804,
+  0.757,
+  0.706
+}
 
 -- text colors
-COLOR_TILE_FG_DARK  = {0.467, 0.431, 0.396}
-COLOR_TILE_FG_LIGHT = {0.976, 0.965, 0.949}
+COLOR_TILE_FG_DARK = {
+  0.467,
+  0.431,
+  0.396
+}
+COLOR_TILE_FG_LIGHT = {
+  0.976,
+  0.965,
+  0.949
+}
 COLOR_FG = COLOR_TILE_FG_DARK
 
 -- tile background colors
 TILE_BG = {
-  [2] = {0.933, 0.894, 0.855}, 
-  [4] = {0.929, 0.878, 0.784}, 
-  [8] = {0.949, 0.694, 0.475}, 
-  [16] = {0.961, 0.584, 0.388}, 
-  [32] = {0.965, 0.486, 0.373}, 
-  [64] = {0.965, 0.369, 0.231}, 
-  [128] = {0.929, 0.812, 0.447}, 
-  [256] = {0.929, 0.800, 0.380}, 
-  [512] = {0.929, 0.784, 0.314}, 
-  [1024] = {0.929, 0.773, 0.247}, 
-  [2048] = {0.929, 0.761, 0.180}  
+  [2] = {
+    0.933,
+    0.894,
+    0.855
+  },
+  [4] = {
+    0.929,
+    0.878,
+    0.784
+  },
+  [8] = {
+    0.949,
+    0.694,
+    0.475
+  },
+  [16] = {
+    0.961,
+    0.584,
+    0.388
+  },
+  [32] = {
+    0.965,
+    0.486,
+    0.373
+  },
+  [64] = {
+    0.965,
+    0.369,
+    0.231
+  },
+  [128] = {
+    0.929,
+    0.812,
+    0.447
+  },
+  [256] = {
+    0.929,
+    0.8,
+    0.38
+  },
+  [512] = {
+    0.929,
+    0.784,
+    0.314
+  },
+  [1024] = {
+    0.929,
+    0.773,
+    0.247
+  },
+  [2048] = {
+    0.929,
+    0.761,
+    0.18
+  }
 }
 
 -- super tiles > 2048:
-COLOR_TILE_BG_SUPER = {0.235, 0.227, 0.196}
+COLOR_TILE_BG_SUPER = {
+  0.235,
+  0.227,
+  0.196
+}
 
 -- fonts
 TILE_FONT_PATH = "assets/fonts/SarasaGothicJ-Bold.ttf"
@@ -78,14 +146,17 @@ end
 -- draw board frame with uniform thickness
 function draw_board_frame()
   gfx.setColor(COLOR_FRAME)
-  draw_round_rect(BOARD_LEFT - FRAME_THICK,
-    BOARD_TOP  - FRAME_THICK,
-    BOARD_WIDTH  + FRAME_THICK * 2,
+  draw_round_rect(
+    BOARD_LEFT - FRAME_THICK,
+    BOARD_TOP - FRAME_THICK,
+    BOARD_WIDTH + FRAME_THICK * 2,
     BOARD_HEIGHT + FRAME_THICK * 2,
     FRAME_THICK * FRAME_CORNER_OUT_RATIO
   )
   gfx.setColor(COLOR_BOARD)
-  draw_round_rect( BOARD_LEFT, BOARD_TOP,
+  draw_round_rect(
+    BOARD_LEFT,
+    BOARD_TOP,
     BOARD_WIDTH,
     BOARD_HEIGHT,
     FRAME_THICK * FRAME_CORNER_IN_RATIO
@@ -116,7 +187,7 @@ end
 -- draw a single tile
 function draw_cell(row, col, value)
   local x = BOARD_LEFT + (col - 1) * CELL_SIZE + CELL_OFFSET
-  local y = BOARD_TOP  + (row - 1) * CELL_SIZE + CELL_OFFSET
+  local y = BOARD_TOP + (row - 1) * CELL_SIZE + CELL_OFFSET
   local bg = COLOR_EMPTY
   if value then
     bg = tile_bg(value)
@@ -124,7 +195,7 @@ function draw_cell(row, col, value)
   gfx.setColor(bg)
   draw_round_rect(x, y, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
   if not value then
-    return
+    return 
   end
   gfx.setColor(tile_fg(value))
   draw_tile_text(value, x, y)
@@ -150,6 +221,10 @@ function draw_game_over()
   if Game.state == "gameover" then
     gfx.setColor(COLOR_FG)
     gfx.setFont(hudFont)
-    gfx.print("GAME OVER", BOARD_LEFT, HUD_Y + GAME_OVER_OFFSET_Y)
+    gfx.print(
+      "GAME OVER",
+      BOARD_LEFT,
+      HUD_Y + GAME_OVER_OFFSET_Y
+    )
   end
 end
