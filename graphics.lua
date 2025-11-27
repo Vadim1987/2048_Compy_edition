@@ -21,7 +21,7 @@ TILE_RADIUS = CELL_GAP
 FRAME_RADIUS = TILE_RADIUS + FRAME_THICK
 
 -- layout constants
-GAME_OVER_OFFSET_Y = 30
+GAME_OVER_OFFSET_X = 20
 
 -- colors
 COLOR_BG = {
@@ -81,6 +81,12 @@ COLOR_TILE_BG_SUPER = {
   0.196
 }
 
+setmetatable(TILE_BG, {
+  __index = function()
+    return COLOR_TILE_BG_SUPER
+  end
+})
+
 -- fonts
 TILE_FONT_PATH = "assets/fonts/SarasaGothicJ-Bold.ttf"
 TILE_FONT_SIZE = 36
@@ -93,6 +99,7 @@ D09 = math.pi / 2
 D18 = math.pi
 D27 = D09 * 3
 D36 = D18 * 2
+
 function draw_round_rect(x, y, w, h, radius)
   local x2 = x + w
   local y2 = y + h
@@ -119,7 +126,7 @@ end
 
 -- helpers for tile colors
 function tile_bg(value)
-  return TILE_BG[value] or COLOR_TILE_BG_SUPER
+  return TILE_BG[value]
 end
 
 function tile_fg(value)
@@ -168,7 +175,8 @@ end
 function draw_score()
   gfx.setColor(COLOR_FG)
   gfx.setFont(hudFont)
-  gfx.print("Score: " .. Game.score, BOARD_LEFT, HUD_Y)
+  score_str = "Score: " .. Game.score
+  gfx.print(score_str, BOARD_LEFT, HUD_Y)
 end
 
 function draw_game_over()
@@ -177,8 +185,8 @@ function draw_game_over()
     gfx.setFont(hudFont)
     gfx.print(
       "GAME OVER",
-      BOARD_LEFT,
-      HUD_Y + GAME_OVER_OFFSET_Y
+      BOARD_LEFT + hudFont:getWidth(score_str) + GAME_OVER_OFFSET_X,
+      HUD_Y
     )
   end
 end
