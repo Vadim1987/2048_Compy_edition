@@ -11,16 +11,19 @@ Game = {
   cells = { },
   score = 0,
   empty_count = 0,
-  state = "play"
+  state = "play",
+  animations = { }
 }
 
 -- probabilities and counts
 START_TILES = 2
 TILE_TWO_PROBABILITY = 0.9
+SPAWN_ANIM_DURATION = 0.15
 
 -- reset board to empty state
 function game_clear()
   Game.empty_count = Game.rows * Game.cols
+  Game.animations = { }
   for row = 1, Game.rows do
     Game.cells[row] = { }
   end
@@ -49,12 +52,24 @@ function find_empty_by_index(target)
   end
 end
 
--- add one random 2 or 4
+function game_add_spawn_animation(row, col, value)
+  local anim = {
+    type = "spawn",
+    row = row,
+    col = col,
+    value = value,
+    t = 0
+  }
+  table.insert(Game.animations, anim)
+end
+
 function game_add_random_tile()
   local target = love.math.random(Game.empty_count)
   local row, col = find_empty_by_index(target)
-  Game.cells[row][col] = tile_random_value()
+  local value = tile_random_value()
+  Game.cells[row][col] = value
   Game.empty_count = Game.empty_count - 1
+  game_add_spawn_animation(row, col, value)
 end
 
 -- full reset of the game
@@ -65,6 +80,20 @@ function game_reset()
     game_add_random_tile()
   end
   Game.state = "play"
+end
+
+function game_update_animations(dt)
+  local speed = 1 / SPAWN_ANIM_DURATION
+  local index = 1
+  while index <= #Game.animations do
+    local anim = Game.animations[index]
+    anim.t = anim.t + dt * speed
+    if 1 < anim.t then
+      table.remove(Game.animations, index)
+    else
+      index = index + 1
+    end
+  end
 end
 
 -- true if at least one merge is possible on a full board

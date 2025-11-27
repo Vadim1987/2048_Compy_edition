@@ -22,6 +22,7 @@ FRAME_RADIUS = TILE_RADIUS + FRAME_THICK
 
 -- layout constants
 GAME_OVER_OFFSET_X = 20
+SPAWN_MIN_SCALE = 0.2
 
 -- colors
 COLOR_BG = {
@@ -184,6 +185,30 @@ function draw_cell(row, col, value)
   end
   gfx.setColor(COLOR_CANVAS_TINT)
   gfx.draw(TILE_CANVAS[value], x, y)
+end
+
+function draw_spawn_animation(anim)
+  local t = anim.t
+  if t < 0 then t = 0 end
+  if 1 < t then t = 1 end
+  local x = BOARD_LEFT + (anim.col - 1) * CELL_SIZE + CELL_OFFSET
+  local y = BOARD_TOP + (anim.row - 1) * CELL_SIZE + CELL_OFFSET
+  local s = SPAWN_MIN_SCALE + (1 - SPAWN_MIN_SCALE) * t
+  gfx.setColor(COLOR_CANVAS_TINT)
+  gfx.push()
+  gfx.translate(x + TILE_SIZE / 2, y + TILE_SIZE / 2)
+  gfx.scale(s, s)
+  gfx.draw(TILE_CANVAS[anim.value], -TILE_SIZE / 2, -TILE_SIZE / 2)
+  gfx.pop()
+end
+
+function draw_animations()
+  for index = 1, #Game.animations do
+    local anim = Game.animations[index]
+    if anim.type == "spawn" then
+      draw_spawn_animation(anim)
+    end
+  end
 end
 
 -- draw whole board

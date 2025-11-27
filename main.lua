@@ -13,10 +13,15 @@ function love.keypressed(key)
   end
 end
 
+function love.update(dt)
+  game_update_animations(dt)
+end
+
 function love.draw()
   gfx.clear(COLOR_BG)
   draw_board_frame()
   draw_board()
+  draw_animations()
   draw_score()
   draw_game_over()
 end
