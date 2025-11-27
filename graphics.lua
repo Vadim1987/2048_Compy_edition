@@ -187,6 +187,8 @@ function draw_cell(row, col, value)
   gfx.draw(TILE_CANVAS[value], x, y)
 end
 
+DrawAnim = { }
+
 function draw_spawn_animation(anim)
   local t = anim.t
   if t < 0 then t = 0 end
@@ -202,11 +204,14 @@ function draw_spawn_animation(anim)
   gfx.pop()
 end
 
+DrawAnim.spawn = draw_spawn_animation
+
 function draw_animations()
   for index = 1, #Game.animations do
     local anim = Game.animations[index]
-    if anim.type == "spawn" then
-      draw_spawn_animation(anim)
+    local handler = DrawAnim[anim.type]
+    if handler then
+      handler(anim)
     end
   end
 end
