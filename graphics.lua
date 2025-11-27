@@ -125,12 +125,8 @@ function draw_board_frame()
 end
 
 -- helpers for tile colors
-function tile_bg(value)
-  return TILE_BG[value]
-end
-
 function tile_fg(value)
-  if value == 2 or value == 4 then
+  if value < 8 then
     return COLOR_TILE_FG_DARK
   end
   return COLOR_TILE_FG_LIGHT
@@ -151,7 +147,7 @@ function draw_cell(row, col, value)
   local y = BOARD_TOP + (row - 1) * CELL_SIZE + CELL_OFFSET
   local bg = COLOR_EMPTY
   if value then
-    bg = tile_bg(value)
+    bg = TILE_BG[value]
   end
   gfx.setColor(bg)
   draw_round_rect(x, y, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
