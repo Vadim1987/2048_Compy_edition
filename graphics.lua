@@ -51,7 +51,14 @@ COLOR_TILE_FG_LIGHT = {
   0.965,
   0.949
 }
+
 COLOR_FG = COLOR_TILE_FG_DARK
+
+COLOR_CANVAS_TINT = {
+  1,
+  1,
+  1
+}
 
 -- tile background colors
 TILE_BG = { }
@@ -84,6 +91,31 @@ COLOR_TILE_BG_SUPER = {
 setmetatable(TILE_BG, {
   __index = function()
     return COLOR_TILE_BG_SUPER
+  end
+})
+
+function create_tile_canvas(value)
+  local canvas = gfx.newCanvas(TILE_SIZE, TILE_SIZE)
+  gfx.push()
+  gfx.setCanvas(canvas)
+  gfx.clear(0, 0, 0, 0)
+  local bg = TILE_BG[value]
+  gfx.setColor(bg)
+  draw_round_rect(0, 0, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
+  gfx.setColor(tile_fg(value))
+  draw_tile_text(value, 0, 0)
+  gfx.setCanvas()
+  gfx.pop()
+  return canvas
+end
+
+TILE_CANVAS = { }
+
+setmetatable(TILE_CANVAS, {
+  __index = function(t, value)
+    local canvas = create_tile_canvas(value)
+    t[value] = canvas
+    return canvas
   end
 })
 
@@ -145,17 +177,13 @@ end
 function draw_cell(row, col, value)
   local x = BOARD_LEFT + (col - 1) * CELL_SIZE + CELL_OFFSET
   local y = BOARD_TOP + (row - 1) * CELL_SIZE + CELL_OFFSET
-  local bg = COLOR_EMPTY
-  if value then
-    bg = TILE_BG[value]
-  end
-  gfx.setColor(bg)
+  gfx.setColor(COLOR_EMPTY)
   draw_round_rect(x, y, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
   if not value then
-    return 
+    return
   end
-  gfx.setColor(tile_fg(value))
-  draw_tile_text(value, x, y)
+  gfx.setColor(COLOR_CANVAS_TINT)
+  gfx.draw(TILE_CANVAS[value], x, y)
 end
 
 -- draw whole board
