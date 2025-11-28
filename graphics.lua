@@ -174,10 +174,15 @@ function draw_tile_text(value, x, y)
   gfx.print(value, tx, ty)
 end
 
--- draw a single tile
-function draw_cell(row, col, value)
+function cell_to_screen(row, col)
   local x = BOARD_LEFT + (col - 1) * CELL_SIZE + CELL_OFFSET
   local y = BOARD_TOP + (row - 1) * CELL_SIZE + CELL_OFFSET
+  return x, y
+end
+
+-- draw a single tile
+function draw_cell(row, col, value)
+  local x, y = cell_to_screen(row, col)
   gfx.setColor(COLOR_EMPTY)
   draw_round_rect(x, y, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
   if not value then
@@ -189,12 +194,11 @@ end
 
 DrawAnim = { }
 
-function draw_spawn_animation(anim)
+function DrawAnim.spawn(anim)
   local t = anim.t
   if t < 0 then t = 0 end
-  if 1 < t then t = 1 end
-  local x = BOARD_LEFT + (anim.col - 1) * CELL_SIZE + CELL_OFFSET
-  local y = BOARD_TOP + (anim.row - 1) * CELL_SIZE + CELL_OFFSET
+  if t > 1 then t = 1 end
+  local x, y = cell_to_screen(anim.row, anim.col)
   local s = SPAWN_MIN_SCALE + (1 - SPAWN_MIN_SCALE) * t
   gfx.setColor(COLOR_CANVAS_TINT)
   gfx.push()
@@ -204,7 +208,17 @@ function draw_spawn_animation(anim)
   gfx.pop()
 end
 
-DrawAnim.spawn = draw_spawn_animation
+function DrawAnim.slide(anim)
+  local t = anim.t
+  if t < 0 then t = 0 end
+  if t > 1 then t = 1 end
+  local x1, y1 = cell_to_screen(anim.from_row, anim.from_col)
+  local x2, y2 = cell_to_screen(anim.to_row, anim.to_col)
+  local x = x1 + (x2 - x1) * t
+  local y = y1 + (y2 - y1) * t
+  gfx.setColor(COLOR_CANVAS_TINT)
+  gfx.draw(TILE_CANVAS[anim.value], x, y)
+end
 
 function draw_animations()
   for index = 1, #Game.animations do

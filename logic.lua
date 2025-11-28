@@ -14,20 +14,32 @@ function set_value(indices, index, value)
   Game.cells[row][col] = value
 end
 
+function add_slide_if_moved(indices, from_index, write, value)
+  if from_index == write then
+    return false
+  end
+  local from_row, from_col = indices(from_index)
+  local to_row, to_col = indices(write)
+  game_add_slide_animation(
+    from_row, from_col, to_row, to_col, value
+  )
+  return true
+end
+
 -- compact line in-place via accessors
 function compact_line(indices, size)
   local moved, write = false, 1
   for index = 1, size do
     local value = get_value(indices, index)
     if value then
-      moved = moved or index ~= write
+      if add_slide_if_moved(indices, index, write, value) then
+        moved = true
+      end
       set_value(indices, write, value)
-      write = write + 1
-    end
+      write = write + 1 end
   end
-  for index = write, size do
-    set_value(indices, index, nil)
-  end
+  for index = write, size do 
+    set_value(indices, index, nil) end
   return moved
 end
 

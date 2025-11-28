@@ -63,6 +63,19 @@ function game_add_spawn_animation(row, col, value)
   table.insert(Game.animations, anim)
 end
 
+function game_add_slide_animation(from_row, from_col, to_row, to_col, value)
+  local anim = {
+    type = "slide",
+    from_row = from_row,
+    from_col = from_col,
+    to_row = to_row,
+    to_col = to_col,
+    value = value,
+    t = 0
+  }
+  table.insert(Game.animations, anim)
+end
+
 function game_add_random_tile()
   local target = love.math.random(Game.empty_count)
   local row, col = find_empty_by_index(target)
