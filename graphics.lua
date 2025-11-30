@@ -23,9 +23,8 @@ FRAME_RADIUS = TILE_RADIUS + FRAME_THICK
 -- layout constants
 GAME_OVER_OFFSET_X = 20
 SPAWN_MIN_SCALE = 0.2
-MERGE_MAX_SCALE = 1.2
 MERGE_SPLIT = 0.5
-MERGE_SHRINK = 0.3
+MERGE_SHRINK = 0.8
 
 -- colors
 COLOR_BG = {
@@ -98,26 +97,21 @@ setmetatable(TILE_BG, {
   end
 })
 
-function create_tile_canvas(value)
-  local canvas = gfx.newCanvas(TILE_SIZE, TILE_SIZE)
-  gfx.push()
-  gfx.setCanvas(canvas)
-  gfx.clear(0, 0, 0, 0)
-  local bg = TILE_BG[value]
-  gfx.setColor(bg)
-  draw_round_rect(0, 0, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
-  gfx.setColor(tile_fg(value))
-  draw_tile_text(value, 0, 0)
-  gfx.setCanvas()
-  gfx.pop()
-  return canvas
-end
-
 TILE_CANVAS = { }
 
 setmetatable(TILE_CANVAS, {
   __index = function(t, value)
-    local canvas = create_tile_canvas(value)
+    local canvas = gfx.newCanvas(TILE_SIZE, TILE_SIZE)
+    gfx.push()
+    gfx.setCanvas(canvas)
+    gfx.clear(0, 0, 0, 0)
+    local bg = TILE_BG[value]
+    gfx.setColor(bg)
+    draw_round_rect(0, 0, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
+    gfx.setColor(tile_fg(value))
+    draw_tile_text(value, 0, 0)
+    gfx.setCanvas()
+    gfx.pop()
     t[value] = canvas
     return canvas
   end
@@ -177,31 +171,42 @@ function draw_tile_text(value, x, y)
   gfx.print(value, tx, ty)
 end
 
-function cell_to_screen(row, col)
+function tile_position(row, col)
   local x = BOARD_LEFT + (col - 1) * CELL_SIZE + CELL_OFFSET
   local y = BOARD_TOP + (row - 1) * CELL_SIZE + CELL_OFFSET
   return x, y
 end
 
 -- draw a single tile
-function draw_cell(row, col, value)
-  local x, y = cell_to_screen(row, col)
+function draw_cell(row, col, value, mask)
+  local x, y = tile_position(row, col)
   gfx.setColor(COLOR_EMPTY)
   draw_round_rect(x, y, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
   if not value then
+    return
+  end
+  if mask and mask[row] and mask[row][col] then
     return
   end
   gfx.setColor(COLOR_CANVAS_TINT)
   gfx.draw(TILE_CANVAS[value], x, y)
 end
 
-DrawAnim = { }
+DrawAnim = DrawAnim or { }
+
+local function clamp01(t)
+  if t < 0 then 
+    return 0 
+  end
+  if t > 1 then 
+    return 1 
+  end
+  return t
+end
 
 function DrawAnim.spawn(anim)
-  local t = anim.t
-  if t < 0 then t = 0 end
-  if t > 1 then t = 1 end
-  local x, y = cell_to_screen(anim.row, anim.col)
+  local t = clamp01(anim.t)
+  local x, y = tile_position(anim.row, anim.col)
   local s = SPAWN_MIN_SCALE + (1 - SPAWN_MIN_SCALE) * t
   gfx.setColor(COLOR_CANVAS_TINT)
   gfx.push()
@@ -212,49 +217,36 @@ function DrawAnim.spawn(anim)
 end
 
 function DrawAnim.slide(anim)
-  local t = anim.t
-  if t < 0 then t = 0 end
-  if t > 1 then t = 1 end
-  local x1, y1 = cell_to_screen(anim.from_row, anim.from_col)
-  local x2, y2 = cell_to_screen(anim.to_row, anim.to_col)
+  local t = clamp01(anim.t)
+  local x1, y1 = tile_position(anim.row_from, anim.col_from)
+  local x2, y2 = tile_position(anim.row_to,   anim.col_to)
   local x = x1 + (x2 - x1) * t
   local y = y1 + (y2 - y1) * t
   gfx.setColor(COLOR_CANVAS_TINT)
   gfx.draw(TILE_CANVAS[anim.value], x, y)
 end
 
-local function draw_merge_old(anim, phase)
-  local x, y = cell_to_screen(anim.row, anim.col)
-  gfx.setColor(COLOR_CANVAS_TINT)
-  gfx.push()
-  gfx.translate(x + TILE_SIZE / 2, y + TILE_SIZE / 2)
-  local s = 1 - MERGE_SHRINK * phase
-  gfx.scale(s, s)
-  gfx.draw(TILE_CANVAS[anim.value / 2], -TILE_SIZE / 2, -TILE_SIZE / 2)
-  gfx.pop()
-end
-
-local function draw_merge_new(anim, phase)
-  local x, y = cell_to_screen(anim.row, anim.col)
-  gfx.setColor(COLOR_CANVAS_TINT)
-  gfx.push()
-  gfx.translate(x + TILE_SIZE / 2, y + TILE_SIZE / 2)
-  local s = MERGE_MAX_SCALE - (MERGE_MAX_SCALE - 1) * phase
-  gfx.scale(s, s)
-  gfx.draw(TILE_CANVAS[anim.value], -TILE_SIZE / 2, -TILE_SIZE / 2)
-  gfx.pop()
-end
-
 function DrawAnim.merge(anim)
-  local t = anim.t
-  if t < 0 then t = 0 end
-  if t > 1 then t = 1 end
-  local split = MERGE_SPLIT
-  if t < split then
-    draw_merge_old(anim, t / split)
-  else
-    draw_merge_new(anim, (t - split) / (1 - split))
+  local t = clamp01(anim.t)
+  local x, y = tile_position(anim.row, anim.col)
+  local canvas, scale = merge_state(anim, t)
+  gfx.setColor(COLOR_CANVAS_TINT)
+  gfx.push()
+  gfx.translate(x + TILE_SIZE / 2, y + TILE_SIZE / 2)
+  gfx.scale(scale, scale)
+  gfx.draw(canvas, -TILE_SIZE / 2, -TILE_SIZE / 2)
+  gfx.pop()
+end
+
+function merge_state(anim, t)
+  if t < MERGE_SPLIT then
+    local k = t / MERGE_SPLIT
+    local s = 1 + (MERGE_SHRINK - 1) * k
+    return TILE_CANVAS[anim.from_value], s
   end
+  local k = (t - MERGE_SPLIT) / (1 - MERGE_SPLIT)
+  local s = MERGE_SHRINK + (1 - MERGE_SHRINK) * k
+  return TILE_CANVAS[anim.to_value], s
 end
 
 function draw_animations()
@@ -267,11 +259,31 @@ function draw_animations()
   end
 end
 
+function build_anim_mask()
+  local mask = { }
+  for row = 1, Game.rows do
+    mask[row] = { }
+  end
+  for index = 1, #Game.animations do
+    local anim = Game.animations[index]
+    local row1 = anim.row or anim.row_to
+    local col1 = anim.col or anim.col_to
+    if row1 and col1 then
+      mask[row1][col1] = true
+    end
+    if anim.row_from and anim.col_from then
+      mask[anim.row_from][anim.col_from] = true
+    end
+  end
+  return mask
+end
+
 -- draw whole board
 function draw_board()
+  local mask = build_anim_mask()
   for row = 1, Game.rows do
     for col = 1, Game.cols do
-      draw_cell(row, col, Game.cells[row][col])
+      draw_cell(row, col, Game.cells[row][col], mask)
     end
   end
 end

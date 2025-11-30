@@ -14,32 +14,95 @@ function set_value(indices, index, value)
   Game.cells[row][col] = value
 end
 
-function add_slide_if_moved(indices, from_index, write, value)
-  if from_index == write then
+function get_line_values(indices, size)
+  local line = { }
+  for index = 1, size do
+    line[index] = get_value(indices, index)
+  end
+  return line
+end
+
+function fill_slide_indices(before, after)
+  local src = { }
+  local dst = { }
+  local size = #before
+  for index = 1, size do
+    if before[index] then
+      src[#src + 1] = index
+    end
+    if after[index] then
+      dst[#dst + 1] = index
+    end
+  end
+  return src, dst
+end
+
+function is_merged_pair(before, after, dest_index, from1, from2)
+  if not from2 then
     return false
   end
-  local from_row, from_col = indices(from_index)
-  local to_row, to_col = indices(write)
-  game_add_slide_animation(
-    from_row, from_col, to_row, to_col, value
-  )
-  return true
+  local value = before[from1]
+  if before[from2] ~= value then
+    return false
+  end
+  return after[dest_index] == value + value
+end
+
+function add_anim(kind, idx, a, b, value)
+  local r1, c1 = idx(a)
+  local r2, c2 = idx(b)
+  if kind == "slide" then
+    game_add_slide_animation(r1, c1, r2, c2, value)
+  else
+    game_add_merge_animation(r2, c2, value, value + value)
+  end
+end
+
+function apply_slide_step(before, after, idx, src, dst, si, di)
+  local from1 = src[si]
+  if not from1 then
+    return nil
+  end
+  local dest = dst[di]
+  local from2 = src[si + 1]
+  local value = before[from1]
+  if is_merged_pair(before, after, dest, from1, from2) then
+    add_anim("slide", idx, from2, dest, value)
+    add_anim("merge", idx, dest, dest, value)
+    return si + 2
+  end
+    add_anim("slide", idx, from1, dest, value)
+  return si + 1
+end
+
+function add_line_slides(before, after, idx)
+  local src, dst = fill_slide_indices(before, after)
+  local si = 1
+  for di = 1, #dst do
+    si = apply_slide_step(before, after, idx, src, dst, si, di)
+    if not si then
+      break
+    end
+  end
 end
 
 -- compact line in-place via accessors
 function compact_line(indices, size)
-  local moved, write = false, 1
+  local moved = false
+  local write = 1
   for index = 1, size do
     local value = get_value(indices, index)
     if value then
-      if add_slide_if_moved(indices, index, write, value) then
+      if index ~= write then
         moved = true
       end
       set_value(indices, write, value)
-      write = write + 1 end
+      write = write + 1
+    end
   end
-  for index = write, size do 
-    set_value(indices, index, nil) end
+  for index = write, size do
+    set_value(indices, index, nil)
+  end
   return moved
 end
 
@@ -54,8 +117,6 @@ function merge_line(indices, size)
       set_value(indices, index + 1, nil)
       Game.score = Game.score + merged
       Game.empty_count = Game.empty_count + 1
-      local row, col = indices(index)
-      game_add_spawn_merge("merge", row, col, merged)
       moved = true
     end
   end
@@ -64,12 +125,17 @@ end
 
 -- full move on abstract line via accessors
 function line_move(indices, size)
+  local before = get_line_values(indices, size)
   local moved = compact_line(indices, size)
   if merge_line(indices, size) then
     moved = true
   end
   if compact_line(indices, size) then
     moved = true
+  end
+  if moved then
+    local after = get_line_values(indices, size)
+    add_line_slides(before, after, indices)
   end
   return moved
 end
@@ -134,7 +200,7 @@ end
 
 -- move down on whole board
 function move_down()
-  return move_board(line_apply_col_down, Game.cols)
+  return move_board(line_apply_col_down, Game.rows)
 end
 
 -- run one move in a given direction
@@ -142,7 +208,7 @@ function game_handle_move(move_func)
   if move_func() then
     game_add_random_tile()
     if (0 < Game.empty_count) or game_can_merge() then
-      return 
+      return
     end
     Game.state = "gameover"
   end

@@ -19,6 +19,8 @@ Game = {
 START_TILES = 2
 TILE_TWO_PROBABILITY = 0.9
 SPAWN_ANIM_DURATION = 0.15
+SLIDE_ANIM_DURATION = 0.12
+MERGE_ANIM_DURATION = 0.12
 
 -- reset board to empty state
 function game_clear()
@@ -52,34 +54,43 @@ function find_empty_by_index(target)
   end
 end
 
-function game_add_animation(anim)
-  anim.t = 0
+function game_add_spawn_animation(row, col, value)
+  local anim = {
+    type = "spawn",
+    row = row,
+    col = col,
+    value = value,
+    t = 0,
+    duration = SPAWN_ANIM_DURATION
+  }
   table.insert(Game.animations, anim)
 end
 
-local function add_basic_anim(type_, row, col, value)
-  game_add_animation({
-    type = type_,
+function game_add_slide_animation(row_from, col_from, row_to, col_to, value)
+  local anim = {
+    type = "slide",
+    row_from = row_from,
+    col_from = col_from,
+    row_to = row_to,
+    col_to = col_to,
+    value = value,
+    t = 0,
+    duration = SLIDE_ANIM_DURATION
+  }
+  table.insert(Game.animations, anim)
+end
+
+function game_add_merge_animation(row, col, from_value, to_value)
+  local anim = {
+    type = "merge",
     row = row,
     col = col,
-    value = value
-  })
-end
-
-function game_add_spawn_merge(type_, row, col, value)
-  add_basic_anim(type_, row, col, value)
-end
-
-function game_add_slide_animation(from_row, from_col, to_row, to_col, value)
-  game_add_animation({
-    type = "slide",
-    from_row = from_row,
-    from_col = from_col,
-    to_row = to_row,
-    to_col = to_col,
-    value = value
+    from_value = from_value,
+    to_value = to_value,
+    t = 0,
+    duration = MERGE_ANIM_DURATION
   }
-)
+  table.insert(Game.animations, anim)
 end
 
 function game_add_random_tile()
@@ -88,7 +99,7 @@ function game_add_random_tile()
   local value = tile_random_value()
   Game.cells[row][col] = value
   Game.empty_count = Game.empty_count - 1
-  game_add_spawn_merge("spawn", row, col, value)
+  game_add_spawn_animation(row, col, value)
 end
 
 -- full reset of the game
@@ -102,11 +113,11 @@ function game_reset()
 end
 
 function game_update_animations(dt)
-  local speed = 1 / SPAWN_ANIM_DURATION
   local index = 1
   while index <= #Game.animations do
     local anim = Game.animations[index]
-    anim.t = anim.t + dt * speed
+    local duration = anim.duration or SPAWN_ANIM_DURATION
+    anim.t = anim.t + dt / duration
     if 1 < anim.t then
       table.remove(Game.animations, index)
     else
