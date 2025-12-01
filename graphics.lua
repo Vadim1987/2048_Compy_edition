@@ -195,19 +195,9 @@ end
 
 DrawAnim = DrawAnim or { }
 
-local function clamp01(t)
-  if t < 0 then 
-    return 0 
-  end
-  if t > 1 then 
-    return 1 
-  end
-  return t
-end
-
 function DrawAnim.spawn(anim)
-  local t = clamp01(anim.t)
-  local x, y = tile_position(anim.row, anim.col)
+  local t = anim.t
+  local x, y = tile_position(anim.row_to, anim.col_to)
   local s = SPAWN_MIN_SCALE + (1 - SPAWN_MIN_SCALE) * t
   gfx.setColor(COLOR_CANVAS_TINT)
   gfx.push()
@@ -218,7 +208,7 @@ function DrawAnim.spawn(anim)
 end
 
 function DrawAnim.slide(anim)
-  local t = clamp01(anim.t)
+  local t = anim.t
   local x1, y1 = tile_position(anim.row_from, anim.col_from)
   local x2, y2 = tile_position(anim.row_to,   anim.col_to)
   local x = x1 + (x2 - x1) * t
@@ -228,8 +218,8 @@ function DrawAnim.slide(anim)
 end
 
 function DrawAnim.merge(anim)
-  local t = clamp01(anim.t)
-  local x, y = tile_position(anim.row, anim.col)
+  local t = anim.t
+  local x, y = tile_position(anim.row_to, anim.col_to)
   local canvas, scale = merge_state(anim, t)
   gfx.setColor(COLOR_CANVAS_TINT)
   gfx.push()
@@ -263,10 +253,8 @@ function build_anim_mask()
   end
   for i = 1, #Game.animations do
     local anim = Game.animations[i]
-    if anim.row and anim.col then
-      mask[anim.row][anim.col] = true
-    end
-    if anim.row_from and anim.col_from then
+    mask[anim.row_to][anim.col_to] = true
+    if anim.row_from then
       mask[anim.row_from][anim.col_from] = true
     end
   end

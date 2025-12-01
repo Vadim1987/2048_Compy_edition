@@ -61,12 +61,10 @@ local ANIM_DURATION = {
 }
 
 function game_add_animation(kind, args)
-  assert(kind, "Animation kind is required")
   local anim = args or { }
   anim.type = kind
   anim.t = 0
   anim.duration = anim.duration or ANIM_DURATION[kind]
-  assert(anim.duration, "Unknown animation kind: " .. tostring(kind))
   table.insert(Game.animations, anim)
 end
 
@@ -77,8 +75,8 @@ function game_add_random_tile()
   Game.cells[row][col] = value
   Game.empty_count = Game.empty_count - 1
   game_add_animation("spawn", {
-    row = row,
-    col = col,
+    row_to = row,
+    col_to = col,
     value = value
   })
 end
@@ -98,7 +96,6 @@ function game_update_animations(dt)
   while index <= #Game.animations do
     local anim = Game.animations[index]
     local duration = anim.duration
-    assert(duration, "Animation missing duration for type " .. tostring(anim.type))
     anim.t = anim.t + dt / duration
     if anim.t > 1 then
       table.remove(Game.animations, index)

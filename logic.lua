@@ -51,16 +51,19 @@ end
 function add_anim(kind, idx, a, b, value)
   local r1, c1 = idx(a)
   local r2, c2 = idx(b)
-  local args
+  local args = {
+    row_to = r2,
+    col_to = c2
+  }
   if kind == "slide" then
-    args = {row_from = r1, col_from = c1, row_to = r2,
-      col_to = c2, value = value
-    }
+    args.row_from = r1
+    args.col_from = c1
+    args.value = value
   else
-    args = {row = r2, col = c2, from_value = value,
-      to_value = value + value
-    }
+    args.from_value = value
+    args.to_value = value + value
   end
+
   game_add_animation(kind, args)
 end
 
