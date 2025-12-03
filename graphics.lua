@@ -179,18 +179,14 @@ function tile_position(row, col)
 end
 
 -- draw a single tile
-function draw_cell(row, col, value, mask)
+function draw_cell(row, col, value)
   local x, y = tile_position(row, col)
   gfx.setColor(COLOR_EMPTY)
   draw_round_rect(x, y, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
-  if not value then
-    return
+  if value then
+    gfx.setColor(COLOR_CANVAS_TINT)
+    gfx.draw(TILE_CANVAS[value], x, y)
   end
-  if mask and mask[row][col] then
-    return
-  end
-  gfx.setColor(COLOR_CANVAS_TINT)
-  gfx.draw(TILE_CANVAS[value], x, y)
 end
 
 DrawAnim = DrawAnim or { }
@@ -246,29 +242,17 @@ function draw_animations()
   end
 end
 
-function build_anim_mask()
-  local mask = { }
-  for row = 1, Game.rows do
-    mask[row] = { }
-  end
-  for i = 1, #Game.animations do
-    local anim = Game.animations[i]
-    mask[anim.row_to][anim.col_to] = true
-    if anim.row_from then
-      mask[anim.row_from][anim.col_from] = true
-    end
-  end
-  return mask
-end
-
--- draw whole board
+-- draw board: either animations OR static state
 function draw_board()
-  local mask = build_anim_mask()
+  local anims = #Game.animations > 0
   for row = 1, Game.rows do
     for col = 1, Game.cols do
-      draw_cell(row, col, Game.cells[row][col], mask)
+      local val = Game.cells[row][col]
+      if anims then val = nil end
+      draw_cell(row, col, val)
     end
   end
+  if anims then draw_animations() end
 end
 
 -- draw text

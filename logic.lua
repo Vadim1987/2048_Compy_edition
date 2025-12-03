@@ -22,10 +22,9 @@ function get_line_values(indices, size)
   return line
 end
 
-function fill_slide_indices(before, after)
+function fill_slide_indices(before, after, size)
   local src = { }
   local dst = { }
-  local size = #before
   for index = 1, size do
     if before[index] then
       src[#src + 1] = index
@@ -63,29 +62,29 @@ function add_anim(kind, idx, a, b, value)
     args.from_value = value
     args.to_value = value + value
   end
-
   game_add_animation(kind, args)
 end
 
 function apply_slide_step(before, after, idx, src, dst, si, di)
   local from1 = src[si]
-  if not from1 then
-    return nil
+  if not from1 then 
+    return nil 
   end
   local dest = dst[di]
   local from2 = src[si + 1]
   local value = before[from1]
   if is_merged_pair(before, after, dest, from1, from2) then
+    add_anim("slide", idx, from1, dest, value) 
     add_anim("slide", idx, from2, dest, value)
     add_anim("merge", idx, dest, dest, value)
     return si + 2
   end
-    add_anim("slide", idx, from1, dest, value)
+   add_anim("slide", idx, from1, dest, value)
   return si + 1
 end
 
-function add_line_slides(before, after, idx)
-  local src, dst = fill_slide_indices(before, after)
+function add_line_slides(before, after, idx, size)
+  local src, dst = fill_slide_indices(before, after, size)
   local si = 1
   for di = 1, #dst do
     si = apply_slide_step(before, after, idx, src, dst, si, di)
@@ -137,15 +136,13 @@ function line_move(indices, size)
   local before = get_line_values(indices, size)
   local moved = compact_line(indices, size)
   if merge_line(indices, size) then
-    moved = true
+    moved = true 
   end
   if compact_line(indices, size) then
-    moved = true
+    moved = true 
   end
-  if moved then
-    local after = get_line_values(indices, size)
-    add_line_slides(before, after, indices)
-  end
+  local after = get_line_values(indices, size)
+  add_line_slides(before, after, indices, size)
   return moved
 end
 
@@ -220,5 +217,7 @@ function game_handle_move(move_func)
       return
     end
     Game.state = "gameover"
+  else
+   Game.animations = { }
   end
 end

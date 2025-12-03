@@ -18,6 +18,7 @@ Game = {
 -- probabilities and counts
 START_TILES = 2
 TILE_TWO_PROBABILITY = 0.9
+MAX_DT = 0.05
 ANIM_DURATION = {
   spawn = 0.15,
   slide = 0.12,
@@ -88,16 +89,19 @@ function game_reset()
 end
 
 function game_update_animations(dt)
-  local index = 1
-  while index <= #Game.animations do
-    local anim = Game.animations[index]
-    local duration = anim.duration
-    anim.t = anim.t + dt / duration
-    if anim.t > 1 then
-      table.remove(Game.animations, index)
-    else
-      index = index + 1
+  local pending = false
+  for i = 1, #Game.animations do
+    local a = Game.animations[i]
+    a.t = a.t + dt / a.duration
+    if a.t > 1 then
+      a.t = 1
     end
+    if a.t < 1 then
+      pending = true
+    end
+  end
+  if not pending then
+    Game.animations = { }
   end
 end
 
