@@ -101,24 +101,6 @@ setmetatable(TILE_BG, {
 
 TILE_CANVAS = { }
 
-setmetatable(TILE_CANVAS, {
-  __index = function(t, value)
-    local canvas = gfx.newCanvas(TILE_SIZE, TILE_SIZE)
-    gfx.push()
-    gfx.setCanvas(canvas)
-    gfx.clear(0, 0, 0, 0)
-    local bg = TILE_BG[value]
-    gfx.setColor(bg)
-    draw_round_rect(0, 0, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
-    gfx.setColor(tile_fg(value))
-    draw_tile_text(value, 0, 0)
-    gfx.setCanvas()
-    gfx.pop()
-    t[value] = canvas
-    return canvas
-  end
-})
-
 -- fonts
 TILE_FONT_PATH = "assets/fonts/SarasaGothicJ-Bold.ttf"
 TILE_FONT_SIZE = 36
@@ -172,6 +154,28 @@ function draw_tile_text(value, x, y)
   local ty = y + (TILE_SIZE - th) / 2
   gfx.print(value, tx, ty)
 end
+
+function draw_tile(value)
+  gfx.clear(0, 0, 0, 0)
+  local bg = TILE_BG[value]
+  gfx.setColor(bg)
+  draw_round_rect(0, 0, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
+  gfx.setColor(tile_fg(value))
+  draw_tile_text(value, 0, 0)
+end
+
+setmetatable(TILE_CANVAS, {
+  __index = function(t, value)
+    local canvas = gfx.newCanvas(TILE_SIZE, TILE_SIZE)
+    gfx.push()
+    gfx.setCanvas(canvas)
+    draw_tile(value)
+    gfx.setCanvas()
+    gfx.pop()
+    t[value] = canvas
+    return canvas
+  end
+})
 
 function tile_position(row, col)
   local x = BOARD_LEFT + (col - 1) * CELL_SIZE + CELL_OFFSET
@@ -249,10 +253,7 @@ function draw_board()
   for row = 1, Game.rows do
     for col = 1, Game.cols do
       local val = Game.cells[row][col]
-      if anims then
-        val = nil
-      end
-      draw_cell(row, col, val)
+      draw_cell(row, col, not anims and val)
     end
   end
   if anims then
