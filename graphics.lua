@@ -234,11 +234,11 @@ function merge_state(anim, t)
   if t < MERGE_SPLIT then
     local k = t / MERGE_SPLIT
     local s = 1 + (MERGE_SHRINK - 1) * k
-    return TILE_CANVAS[anim.from_value], s
+    return TILE_CANVAS[anim.value], s
   end
   local k = (t - MERGE_SPLIT) / (1 - MERGE_SPLIT)
   local s = MERGE_SHRINK + (1 - MERGE_SHRINK) * k
-  return TILE_CANVAS[anim.to_value], s
+  return TILE_CANVAS[2 * anim.value], s
 end
 
 function draw_animations()

@@ -48,35 +48,26 @@ function is_merged_pair(before, after, dest_index, from1, from2)
 end
 
 function add_anim(kind, idx, a, b, value)
-  local r1, c1 = idx(a)
-  local r2, c2 = idx(b)
-  local args = {
-    row_to = r2,
-    col_to = c2
-  }
-  if kind == "slide" then
-    args.row_from, args.col_from, args.value = r1, c1, value
-  else
-    args.from_value, args.to_value = value, value + value
-  end
+  local args = { }
+  args.row_from, args.col_from = idx(a)
+  args.row_to, args.col_to = idx(b)
+  args.value = value
   game_add_animation(kind, args)
 end
 
 function apply_slide_step(before, after, idx, src, dst, si, di)
   local from1 = src[si]
-  if not from1 then 
-    return nil 
+  if not from1 then
+    return nil
   end
-  local dest = dst[di]
-  local from2 = src[si + 1]
-  local value = before[from1]
+  local dest, from2, value = dst[di], src[si + 1], before[from1]
   if is_merged_pair(before, after, dest, from1, from2) then
-    add_anim("slide", idx, from1, dest, value) 
+    add_anim("slide", idx, from1, dest, value)
     add_anim("slide", idx, from2, dest, value)
     add_anim("merge", idx, dest, dest, value)
     return si + 2
   end
-   add_anim("slide", idx, from1, dest, value)
+  add_anim("slide", idx, from1, dest, value)
   return si + 1
 end
 
