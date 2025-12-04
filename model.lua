@@ -29,7 +29,7 @@ ANIM_DURATION = {
 function game_clear()
   Game.empty_count = Game.rows * Game.cols
   Game.animations = { }
-  for row = 1, Game.rows do
+  for row = 1, Game.rows + 1 do
     Game.cells[row] = { }
   end
 end
@@ -90,15 +90,12 @@ end
 
 function game_update_animations(dt)
   local pending = false
-  for i = 1, #(Game.animations) do
-    local a = Game.animations[i]
+  for _, a in pairs(Game.animations) do
     a.t = a.t + dt / a.duration
     if 1 < a.t then
       a.t = 1
     end
-    if a.t < 1 then
-      pending = true
-    end
+    pending = pending or (a.t < 1)
   end
   if not pending then
     Game.animations = { }
@@ -110,13 +107,8 @@ function game_can_merge()
   local cells, rows, cols = Game.cells, Game.rows, Game.cols
   for row = 1, rows do
     for col = 1, cols do
-      if (col < cols)
-           and (cells[row][col] == cells[row][col + 1])
-      then
-        return true
-      end
-      if (row < rows)
-           and (cells[row][col] == cells[row + 1][col])
+      if (cells[row][col] == cells[row][col + 1])
+         or (cells[row][col] == cells[row + 1][col])
       then
         return true
       end
