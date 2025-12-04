@@ -7,7 +7,7 @@ require("model")
 gfx = love.graphics
 
 -- size from single base unit
-BASE_SIZE = 15
+BASE_SIZE = 13
 FRAME_THICK = BASE_SIZE
 CELL_SIZE = BASE_SIZE * 9
 CELL_GAP = BASE_SIZE
@@ -27,6 +27,17 @@ GAME_OVER_OFFSET_X = 20
 SPAWN_MIN_SCALE = 0.2
 MERGE_SPLIT = 0.5
 MERGE_SHRINK = 0.8
+
+-- Button Layout Constants
+BTN_W = 80
+BTN_H = 40
+BTN_GAP = 15
+BTN_Y = HUD_Y + 40
+BTN_LABELS = { 
+"Undo", 
+"Redo", 
+"Replay" 
+}
 
 -- colors
 COLOR_BG = {
@@ -279,5 +290,49 @@ function draw_game_over()
           GAME_OVER_OFFSET_X,
       HUD_Y
     )
+  end
+end
+
+function draw_btn(index, label)
+  local x = BOARD_LEFT + (index - 1) * (BTN_W + BTN_GAP)
+  gfx.setColor(COLOR_BOARD)
+  draw_round_rect(x, BTN_Y, BTN_W, BTN_H, 5)
+  gfx.setColor(COLOR_FG)
+  gfx.setFont(hudFont)
+  local tx = x + (BTN_W - hudFont:getWidth(label)) / 2
+  local ty = BTN_Y + (BTN_H - hudFont:getHeight()) / 2
+  gfx.print(label, tx, ty)
+end
+
+function draw_ui()
+  draw_score()
+  draw_game_over()
+  for i = 1, #BTN_LABELS do
+    draw_btn(i, BTN_LABELS[i])
+  end
+end
+
+-- Helper: Load sound only if file exists
+function safe_load(path)
+  if love.filesystem.getInfo(path) then
+    return love.audio.newSource(path, "static")
+  end
+  return nil
+end
+
+-- Audio Assets 
+SOUNDS = {
+  gameover = safe_load("assets/sounds/gameover.wav"),
+  knock = safe_load("assets/sounds/knock.wav"),
+  jump = safe_load("assets/sounds/jump.wav"),
+  wow = safe_load("assets/sounds/wow.wav"),
+  beep = safe_load("assets/sounds/beep.wav")
+}
+
+function play_sfx(name)
+  local s = SOUNDS[name]
+  if s then
+    s:stop()
+    s:play()
   end
 end

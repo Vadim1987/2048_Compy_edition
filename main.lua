@@ -7,18 +7,16 @@ require("graphics")
 require("controls")
 
 function love.keypressed(key)
-  local handler = KeyPress[key]
-  if handler then
-    handler()
-  end
+  controls_key(key)
 end
 
 function love.update(dt)
   game_update_animations(dt)
+  update_replay(dt)
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-  pointer_begin(x, y)
+  controls_click(x, y)
 end
 
 function love.mousereleased(x, y, button, istouch, presses)
@@ -30,8 +28,7 @@ function love.draw()
   draw_board_frame()
   draw_board()
   draw_animations()
-  draw_score()
-  draw_game_over()
+  draw_ui()
 end
 
 -- start game immediately
