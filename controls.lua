@@ -36,7 +36,6 @@ KeyPress.s = KeyPress.down
 KeyPress.escape = love.event.quit
 KeyPress.r = game_reset
 
-
 function pointer_begin(x, y)
   POINTER_ACTIVE = true
   POINTER_X = x
@@ -49,23 +48,23 @@ function swipe_direction(dx, dy)
   if dx2 + dy2 < SWIPE_MIN_DISTANCE2 then
     return nil
   end
-  if dx2 >= dy2 * SWIPE_DIR_RATIO2 then
-    return dx > 0 and "right" or "left"
+  if dy2 * SWIPE_DIR_RATIO2 <= dx2 then
+    return 0 < dx and "right" or "left"
   end
-  if dy2 >= dx2 * SWIPE_DIR_RATIO2 then
-    return dy > 0 and "down" or "up"
+  if dx2 * SWIPE_DIR_RATIO2 <= dy2 then
+    return 0 < dy and "down" or "up"
   end
- return nil
+  return nil
 end
 
 function pointer_end(x, y)
   if not POINTER_ACTIVE then
-    return
+    return 
   end
   POINTER_ACTIVE = false
   local dir = swipe_direction(x - POINTER_X, y - POINTER_Y)
   if not dir then
-    return
+    return 
   end
   love.keypressed(dir)
 end

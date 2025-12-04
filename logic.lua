@@ -55,12 +55,9 @@ function add_anim(kind, idx, a, b, value)
     col_to = c2
   }
   if kind == "slide" then
-    args.row_from = r1
-    args.col_from = c1
-    args.value = value
+    args.row_from, args.col_from, args.value = r1, c1, value
   else
-    args.from_value = value
-    args.to_value = value + value
+    args.from_value, args.to_value = value, value + value
   end
   game_add_animation(kind, args)
 end
@@ -96,14 +93,11 @@ end
 
 -- compact line in-place via accessors
 function compact_line(indices, size)
-  local moved = false
-  local write = 1
+  local moved, write = false, 1
   for index = 1, size do
     local value = get_value(indices, index)
     if value then
-      if index ~= write then
-        moved = true
-      end
+      moved = moved or (index ~= write)
       set_value(indices, write, value)
       write = write + 1
     end
@@ -136,10 +130,10 @@ function line_move(indices, size)
   local before = get_line_values(indices, size)
   local moved = compact_line(indices, size)
   if merge_line(indices, size) then
-    moved = true 
+    moved = true
   end
   if compact_line(indices, size) then
-    moved = true 
+    moved = true
   end
   local after = get_line_values(indices, size)
   add_line_slides(before, after, indices, size)
@@ -214,10 +208,10 @@ function game_handle_move(move_func)
   if move_func() then
     game_add_random_tile()
     if (0 < Game.empty_count) or game_can_merge() then
-      return
+      return 
     end
     Game.state = "gameover"
   else
-   Game.animations = { }
+    Game.animations = { }
   end
 end

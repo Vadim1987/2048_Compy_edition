@@ -1,4 +1,5 @@
 -- graphics.lua
+
 -- Basic drawing: board, tiles, score, game over
 
 require("model")
@@ -100,24 +101,6 @@ setmetatable(TILE_BG, {
 
 TILE_CANVAS = { }
 
-setmetatable(TILE_CANVAS, {
-  __index = function(t, value)
-    local canvas = gfx.newCanvas(TILE_SIZE, TILE_SIZE)
-    gfx.push()
-    gfx.setCanvas(canvas)
-    gfx.clear(0, 0, 0, 0)
-    local bg = TILE_BG[value]
-    gfx.setColor(bg)
-    draw_round_rect(0, 0, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
-    gfx.setColor(tile_fg(value))
-    draw_tile_text(value, 0, 0)
-    gfx.setCanvas()
-    gfx.pop()
-    t[value] = canvas
-    return canvas
-  end
-})
-
 -- fonts
 TILE_FONT_PATH = "assets/fonts/SarasaGothicJ-Bold.ttf"
 TILE_FONT_SIZE = 36
@@ -172,6 +155,28 @@ function draw_tile_text(value, x, y)
   gfx.print(value, tx, ty)
 end
 
+function draw_tile(value)
+  gfx.clear(0, 0, 0, 0)
+  local bg = TILE_BG[value]
+  gfx.setColor(bg)
+  draw_round_rect(0, 0, TILE_SIZE, TILE_SIZE, TILE_RADIUS)
+  gfx.setColor(tile_fg(value))
+  draw_tile_text(value, 0, 0)
+end
+
+setmetatable(TILE_CANVAS, {
+  __index = function(t, value)
+    local canvas = gfx.newCanvas(TILE_SIZE, TILE_SIZE)
+    gfx.push()
+    gfx.setCanvas(canvas)
+    draw_tile(value)
+    gfx.setCanvas()
+    gfx.pop()
+    t[value] = canvas
+    return canvas
+  end
+})
+
 function tile_position(row, col)
   local x = BOARD_LEFT + (col - 1) * CELL_SIZE + CELL_OFFSET
   local y = BOARD_TOP + (row - 1) * CELL_SIZE + CELL_OFFSET
@@ -206,7 +211,7 @@ end
 function DrawAnim.slide(anim)
   local t = anim.t
   local x1, y1 = tile_position(anim.row_from, anim.col_from)
-  local x2, y2 = tile_position(anim.row_to,   anim.col_to)
+  local x2, y2 = tile_position(anim.row_to, anim.col_to)
   local x = x1 + (x2 - x1) * t
   local y = y1 + (y2 - y1) * t
   gfx.setColor(COLOR_CANVAS_TINT)
@@ -237,22 +242,23 @@ function merge_state(anim, t)
 end
 
 function draw_animations()
-  for i = 1, #Game.animations do
+  for i = 1, #(Game.animations) do
     DrawAnim[Game.animations[i].type](Game.animations[i])
   end
 end
 
 -- draw board: either animations OR static state
 function draw_board()
-  local anims = #Game.animations > 0
+  local anims = 0 < #(Game.animations)
   for row = 1, Game.rows do
     for col = 1, Game.cols do
       local val = Game.cells[row][col]
-      if anims then val = nil end
-      draw_cell(row, col, val)
+      draw_cell(row, col, not anims and val)
     end
   end
-  if anims then draw_animations() end
+  if anims then
+    draw_animations()
+  end
 end
 
 -- draw text
@@ -269,7 +275,8 @@ function draw_game_over()
     gfx.setFont(hudFont)
     gfx.print(
       "GAME OVER",
-      BOARD_LEFT + hudFont:getWidth(score_str) + GAME_OVER_OFFSET_X,
+      BOARD_LEFT + hudFont:getWidth(score_str) + 
+          GAME_OVER_OFFSET_X,
       HUD_Y
     )
   end
