@@ -1,4 +1,5 @@
 -- graphics.lua
+
 -- Basic drawing: board, tiles, score, game over
 
 require("model")
@@ -206,7 +207,7 @@ end
 function DrawAnim.slide(anim)
   local t = anim.t
   local x1, y1 = tile_position(anim.row_from, anim.col_from)
-  local x2, y2 = tile_position(anim.row_to,   anim.col_to)
+  local x2, y2 = tile_position(anim.row_to, anim.col_to)
   local x = x1 + (x2 - x1) * t
   local y = y1 + (y2 - y1) * t
   gfx.setColor(COLOR_CANVAS_TINT)
@@ -237,22 +238,26 @@ function merge_state(anim, t)
 end
 
 function draw_animations()
-  for i = 1, #Game.animations do
+  for i = 1, #(Game.animations) do
     DrawAnim[Game.animations[i].type](Game.animations[i])
   end
 end
 
 -- draw board: either animations OR static state
 function draw_board()
-  local anims = #Game.animations > 0
+  local anims = 0 < #(Game.animations)
   for row = 1, Game.rows do
     for col = 1, Game.cols do
       local val = Game.cells[row][col]
-      if anims then val = nil end
+      if anims then
+        val = nil
+      end
       draw_cell(row, col, val)
     end
   end
-  if anims then draw_animations() end
+  if anims then
+    draw_animations()
+  end
 end
 
 -- draw text
@@ -269,7 +274,8 @@ function draw_game_over()
     gfx.setFont(hudFont)
     gfx.print(
       "GAME OVER",
-      BOARD_LEFT + hudFont:getWidth(score_str) + GAME_OVER_OFFSET_X,
+      BOARD_LEFT + hudFont:getWidth(score_str) + 
+          GAME_OVER_OFFSET_X,
       HUD_Y
     )
   end

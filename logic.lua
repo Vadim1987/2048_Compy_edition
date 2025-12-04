@@ -95,6 +95,7 @@ function add_line_slides(before, after, idx, size)
 end
 
 -- compact line in-place via accessors
+
 function compact_line(indices, size)
   local moved = false
   local write = 1
@@ -136,10 +137,10 @@ function line_move(indices, size)
   local before = get_line_values(indices, size)
   local moved = compact_line(indices, size)
   if merge_line(indices, size) then
-    moved = true 
+    moved = true
   end
   if compact_line(indices, size) then
-    moved = true 
+    moved = true
   end
   local after = get_line_values(indices, size)
   add_line_slides(before, after, indices, size)
@@ -214,10 +215,10 @@ function game_handle_move(move_func)
   if move_func() then
     game_add_random_tile()
     if (0 < Game.empty_count) or game_can_merge() then
-      return
+      return 
     end
     Game.state = "gameover"
   else
-   Game.animations = { }
+    Game.animations = { }
   end
 end

@@ -90,10 +90,10 @@ end
 
 function game_update_animations(dt)
   local pending = false
-  for i = 1, #Game.animations do
+  for i = 1, #(Game.animations) do
     local a = Game.animations[i]
     a.t = a.t + dt / a.duration
-    if a.t > 1 then
+    if 1 < a.t then
       a.t = 1
     end
     if a.t < 1 then
