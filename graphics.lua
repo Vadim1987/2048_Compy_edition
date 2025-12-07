@@ -36,7 +36,8 @@ BTN_Y = HUD_Y + 40
 BTN_LABELS = { 
 "Undo", 
 "Redo", 
-"Replay" 
+"Replay",
+"Reset"
 }
 
 -- colors
@@ -205,7 +206,7 @@ function draw_cell(row, col, value)
   end
 end
 
-DrawAnim = DrawAnim or { }
+DrawAnim = { }
 
 function DrawAnim.spawn(anim)
   local t = anim.t
@@ -258,18 +259,27 @@ function draw_animations()
   end
 end
 
--- draw board: either animations OR static state
-function draw_board()
-  local anims = 0 < #(Game.animations)
-  for row = 1, Game.rows do
-    for col = 1, Game.cols do
-      local val = Game.cells[row][col]
-      draw_cell(row, col, not anims and val)
+function is_animating(r, c)
+  for i = 1, #Game.animations do
+    local a = Game.animations[i]
+    local src = (a.row_from == r) and (a.col_from == c)
+    local dst = (a.row_to == r) and (a.col_to == c)
+    if src or dst then
+      return true
     end
   end
-  if anims then
-    draw_animations()
+  return false
+end
+
+function draw_board()
+   for row = 1, Game.rows do
+    for col = 1, Game.cols do
+      local val = Game.cells[row][col]
+      local skip = is_animating(row, col)
+      draw_cell(row, col, not skip and val)
+    end
   end
+  draw_animations()
 end
 
 -- draw text
@@ -312,27 +322,4 @@ function draw_ui()
   end
 end
 
--- Helper: Load sound only if file exists
-function safe_load(path)
-  if love.filesystem.getInfo(path) then
-    return love.audio.newSource(path, "static")
-  end
-  return nil
-end
 
--- Audio Assets 
-SOUNDS = {
-  gameover = safe_load("assets/sounds/gameover.wav"),
-  knock = safe_load("assets/sounds/knock.wav"),
-  jump = safe_load("assets/sounds/jump.wav"),
-  wow = safe_load("assets/sounds/wow.wav"),
-  beep = safe_load("assets/sounds/beep.wav")
-}
-
-function play_sfx(name)
-  local s = SOUNDS[name]
-  if s then
-    s:stop()
-    s:play()
-  end
-end

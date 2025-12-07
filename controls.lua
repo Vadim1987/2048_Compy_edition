@@ -5,41 +5,18 @@ require("logic")
 -- 1. Action Definitions 
 ACTIONS = { }
 
-function ACTIONS.left()   
-  game_handle_move("left") 
-end
+-- Wrappers for moves (Pass name to handler)
+ACTIONS.left  = game_handle_move
+ACTIONS.right = game_handle_move
+ACTIONS.up    = game_handle_move
+ACTIONS.down  = game_handle_move
 
-function ACTIONS.right()  
-  game_handle_move("right") 
-end
-
-function ACTIONS.up()     
-  game_handle_move("up") 
-end
-
-function ACTIONS.down()   
-  game_handle_move("down") 
-end
-
-function ACTIONS.undo()   
-  Logic.undo() 
-end
-
-function ACTIONS.redo()   
-  Logic.redo() 
-end
-
-function ACTIONS.replay() 
-  Logic.replay() 
-end
-
-function ACTIONS.quit()   
-  love.event.quit() 
-end
-
-function ACTIONS.reset()  
-  game_reset() 
-end
+-- Direct assignments 
+ACTIONS.undo   = Logic.undo
+ACTIONS.redo   = Logic.redo
+ACTIONS.replay = Logic.replay
+ACTIONS.quit   = love.event.quit
+ACTIONS.reset  = game_reset
 
 -- 2. Input Mappings (Configuration)
 BINDINGS = {
@@ -54,49 +31,56 @@ BINDINGS = {
   backspace = "undo",
   space = "redo",
   r = "replay",
+  n = "reset",
   escape = "quit"
 }
 
 MOUSE_MAP = { 
   "undo", 
   "redo", 
-  "replay" 
+  "replay",
+  "reset"
 }
 
--- 3. Explicit Dispatcher (The only logic handler)
+-- 3. Explicit Dispatcher
 function dispatch_action(name)
-  if not name then 
-    return 
-  end
+  if not name then return end
   if Game.state == "replay" then
     Game.state = "play"
     return 
   end
-  local func = ACTIONS[name]
-  if func then
-    func()
+  if ACTIONS[name] then 
+    ACTIONS[name](name) 
   end
 end
 
 -- 4. Public Entry Points 
 function controls_key(key)
-  local action_name = BINDINGS[key]
-  dispatch_action(action_name)
+  dispatch_action(BINDINGS[key])
 end
 
 function controls_click(x, y)
- if y < BTN_Y or y > BTN_Y + BTN_H then
-   pointer_begin(x, y) 
-    return
+  if y >= BTN_Y and y <= BTN_Y + BTN_H then
+    local offset = x - BOARD_LEFT
+    local stride = BTN_W + BTN_GAP
+    local index = math.floor(offset / stride) + 1
+    if (offset % stride <= BTN_W) and MOUSE_MAP[index] then
+      dispatch_action(MOUSE_MAP[index])
+      return 
+    end
   end
-  local offset = x - BOARD_LEFT
-  local stride = BTN_W + BTN_GAP
-  local index = math.floor(offset / stride) + 1
-  local local_x = offset % stride
-  if index >= 1 and index <= #MOUSE_MAP 
-  and local_x <= BTN_W 
-  then
-    dispatch_action(MOUSE_MAP[index])
+  pointer_begin(x, y)
+end
+
+function swipe_direction(dx, dy)
+  local ax, ay = math.abs(dx), math.abs(dy)
+  if math.max(ax, ay) < 20 then
+    return nil
+  end
+  if ay < ax then
+    return 0 < dx and "right" or "left"
+  else
+    return 0 < dy and "down" or "up"
   end
 end
 
@@ -112,6 +96,5 @@ function pointer_end(x, y)
     return 
   end
   POINTER_ACTIVE = false
-  local dir = swipe_direction(x - POINTER_X, y - POINTER_Y)
-  dispatch_action(dir)
+  dispatch_action(swipe_direction(x - POINTER_X, y - POINTER_Y))
 end

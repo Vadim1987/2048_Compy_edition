@@ -11,9 +11,6 @@ History = {
   snapshots = { },
   initial = { }  
 }
-BUTTON_WIDTH = 80
-BUTTON_HEIGHT = 40
-BUTTON_GAP = 15
 
 -- game state
 Game = {
@@ -32,7 +29,6 @@ Game = {
 -- probabilities and counts
 START_TILES = 2
 TILE_TWO_PROBABILITY = 0.9
-MAX_DT = 0.05
 ANIM_DURATION = {
   spawn = 0.15,
   slide = 0.12,
@@ -74,7 +70,7 @@ end
 function game_clear()
   Game.empty_count = Game.rows * Game.cols
   Game.animations = { }
-  for row = 1, Game.rows + 1 do
+  for row = 1, Game.rows do
     Game.cells[row] = { }
   end
 end
@@ -110,19 +106,27 @@ function game_add_animation(kind, args)
   table.insert(Game.animations, anim)
 end
 
-function game_add_random_tile(forced)
-  local row, col, value
-  if forced then
-    row, col, value = forced.row, forced.col, forced.value
-  else
-    local t = love.math.random(Game.empty_count)
-    row, col = find_empty_by_index(t)
+-- Generate spawn data wrapper
+function make_spawn_data()
+  local t = love.math.random(Game.empty_count)
+  local r, c = find_empty_by_index(t)
+  return {
+    row = r,
+    col = c,
     value = tile_random_value()
-  end
-  Game.cells[row][col] = value
+  }
+end
+
+function game_add_random_tile(forced)
+  local d = forced or make_spawn_data()
+  Game.cells[d.row][d.col] = d.value
   Game.empty_count = Game.empty_count - 1
-  game_add_animation("spawn", { row_to = row, col_to = col, value = value })
-  return { row = row, col = col, value = value }
+  game_add_animation("spawn", {
+    row_to = d.row,
+    col_to = d.col,
+    value = d.value
+  })
+  return d
 end
 
 -- full reset of the game
@@ -133,6 +137,7 @@ function game_reset()
   History.future = { }
   History.snapshots = { }
   History.initial = { }
+  Game.animations = { } 
   for i = 1, START_TILES do
     local spawn = game_add_random_tile(nil)
     table.insert(History.initial, spawn)
@@ -157,11 +162,13 @@ end
 -- true if at least one merge is possible on a full board
 function game_can_merge()
   local cells, rows, cols = Game.cells, Game.rows, Game.cols
-  for row = 1, rows do
-    for col = 1, cols do
-      if (cells[row][col] == cells[row][col + 1])
-         or (cells[row][col] == cells[row + 1][col])
-      then
+  for r = 1, rows do
+    for c = 1, cols do
+      local val = cells[r][c]
+      if c < cols and val == cells[r][c + 1] then
+        return true
+      end
+      if r < rows and val == cells[r + 1][c] then
         return true
       end
     end
