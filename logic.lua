@@ -315,8 +315,8 @@ function Logic.replay()
   Game.state = "replay"
   game_clear()
   Game.score = 0
-  for i = 1, #(History.initial) do
-    game_add_random_tile(History.initial[i])
+  for _, spawn in ipairs(History.initial) do
+    game_add_random_tile(spawn)
   end
   Game.replay_index = 1
   Game.replay_timer = 0

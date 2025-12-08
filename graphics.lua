@@ -254,14 +254,13 @@ function merge_state(anim, t)
 end
 
 function draw_animations()
-  for i = 1, #(Game.animations) do
-    DrawAnim[Game.animations[i].type](Game.animations[i])
+  for _, anim in ipairs(Game.animations) do
+    DrawAnim[anim.type](anim)
   end
 end
 
 function is_animating(r, c)
-  for i = 1, #Game.animations do
-    local a = Game.animations[i]
+  for _, a in ipairs(Game.animations) do
     local src = (a.row_from == r) and (a.col_from == c)
     local dst = (a.row_to == r) and (a.col_to == c)
     if src or dst then
@@ -317,8 +316,8 @@ end
 function draw_ui()
   draw_score()
   draw_game_over()
-  for i = 1, #BTN_LABELS do
-    draw_btn(i, BTN_LABELS[i])
+  for i, label in ipairs(BTN_LABELS) do
+    draw_btn(i, label)
   end
 end
 

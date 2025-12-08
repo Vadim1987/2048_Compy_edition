@@ -39,10 +39,10 @@ REPLAY_DELAY = 0.2
 -- helper to clone board state
 function deep_copy_cells(cells)
   local new_cells = { }
-  for r = 1, #cells do
+  for r, row in ipairs(cells) do
     new_cells[r] = { }
-    for c = 1, #cells[r] do
-      new_cells[r][c] = cells[r][c]
+    for c, val in ipairs(row) do
+      new_cells[r][c] = val
     end
   end
   return new_cells
