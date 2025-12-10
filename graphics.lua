@@ -271,9 +271,9 @@ function is_animating(r, c)
 end
 
 function draw_board()
-   for row = 1, Game.rows do
+  for row = 1, Game.rows do
     for col = 1, Game.cols do
-      local val = Game.cells[row][col]
+      local val = Game.board.cells[row][col]
       local skip = is_animating(row, col)
       draw_cell(row, col, not skip and val)
     end
@@ -285,7 +285,7 @@ end
 function draw_score()
   gfx.setColor(COLOR_FG)
   gfx.setFont(hudFont)
-  score_str = "Score: " .. Game.score
+  score_str = "Score: " .. Game.board.score
   gfx.print(score_str, BOARD_LEFT, HUD_Y)
 end
 
@@ -320,5 +320,3 @@ function draw_ui()
     draw_btn(i, label)
   end
 end
-
-

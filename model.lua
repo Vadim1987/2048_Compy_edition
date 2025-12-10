@@ -5,26 +5,20 @@
 GRID_SIZE = 4
 
 -- history state
-History = {
-  moves = { },    
-  future = { },   
-  snapshots = { },
-  initial = { }  
-}
+History = { }
 
 -- game state
 Game = {
   rows = GRID_SIZE,
   cols = GRID_SIZE,
-  cells = { },
-  score = 0,
-  empty_count = 0,
   max_merge = 0,
   state = "play",
   replay_index = 0,
   replay_timer = 0,
   animations = { }
 }
+
+Game.board = { cells = { } }
 
 -- probabilities and counts
 START_TILES = 2
@@ -37,41 +31,52 @@ ANIM_DURATION = {
 REPLAY_DELAY = 0.2
 
 -- helper to clone board state
-function deep_copy_cells(cells)
-  local new_cells = { }
-  for r, row in ipairs(cells) do
-    new_cells[r] = { }
-    for c, val in ipairs(row) do
-      new_cells[r][c] = val
-    end
+
+function deep_copy(obj)
+  if type(obj) ~= "table" then
+    return obj
   end
-  return new_cells
+  local r = { }
+  for k, v in pairs(obj) do
+    r[k] = deep_copy(v)
+  end
+  return r
 end
 
+-- helper metatable for stacks
+STACK = {
+  __index = function(_, k)
+    return table[k]
+  end
+}
+
 function save_snapshot()
-  local snap = {
-    cells = deep_copy_cells(Game.cells),
-    score = Game.score,
-    empty_count = Game.empty_count
-  }
-  table.insert(History.snapshots, snap)
+  History.snapshots:insert(deep_copy(Game.board))
 end
 
 function restore_snapshot()
-  local snap = table.remove(History.snapshots)
-  if not snap then return false end
-  Game.cells = snap.cells
-  Game.score = snap.score
-  Game.empty_count = snap.empty_count
+  local board = History.snapshots:remove()
+  if not board then
+    return false
+  end
+  Game.board = board
   return true
 end
 
 -- reset board to empty state
 function game_clear()
-  Game.empty_count = Game.rows * Game.cols
-  Game.animations = { }
+  Game.board.empty_count = Game.rows * Game.cols
   for row = 1, Game.rows do
-    Game.cells[row] = { }
+    Game.board.cells[row] = { }
+  end
+  Game.board.score = 0
+  Game.animations = { }
+  History.past_moves = { }
+  History.future_moves = { }
+  History.snapshots = { }
+  History.initial = { }
+  for _, t in pairs(History) do
+    setmetatable(t, STACK)
   end
 end
 
@@ -88,7 +93,7 @@ function find_empty_by_index(target)
   local seen = 0
   for row = 1, Game.rows do
     for col = 1, Game.cols do
-      if not Game.cells[row][col] then
+      if not Game.board.cells[row][col] then
         seen = seen + 1
         if seen == target then
           return row, col
@@ -106,41 +111,27 @@ function game_add_animation(kind, args)
   table.insert(Game.animations, anim)
 end
 
--- Generate spawn data wrapper
-function make_spawn_data()
-  local t = love.math.random(Game.empty_count)
-  local r, c = find_empty_by_index(t)
-  return {
-    row = r,
-    col = c,
-    value = tile_random_value()
-  }
+function spawn_random_tile()
+  local spawn = { }
+  spawn.row_to, spawn.col_to = find_empty_by_index(
+    love.math.random(Game.board.empty_count)
+  )
+  spawn.value = tile_random_value()
+  spawn_tile(spawn)
+  return spawn
 end
 
-function game_add_random_tile(forced)
-  local d = forced or make_spawn_data()
-  Game.cells[d.row][d.col] = d.value
-  Game.empty_count = Game.empty_count - 1
-  game_add_animation("spawn", {
-    row_to = d.row,
-    col_to = d.col,
-    value = d.value
-  })
-  return d
+function spawn_tile(spawn)
+  Game.board.cells[spawn.row_to][spawn.col_to] = spawn.value
+  Game.board.empty_count = Game.board.empty_count - 1
+  game_add_animation("spawn", spawn)
 end
 
 -- full reset of the game
 function game_reset()
   game_clear()
-  Game.score = 0
-  History.moves = { }
-  History.future = { }
-  History.snapshots = { }
-  History.initial = { }
-  Game.animations = { } 
   for i = 1, START_TILES do
-    local spawn = game_add_random_tile(nil)
-    table.insert(History.initial, spawn)
+    History.initial:insert(spawn_random_tile())
   end
   Game.state = "play"
 end
@@ -161,7 +152,7 @@ end
 
 -- true if at least one merge is possible on a full board
 function game_can_merge()
-  local cells, rows, cols = Game.cells, Game.rows, Game.cols
+  local cells, rows, cols = Game.board.cells, Game.rows, Game.cols
   for r = 1, rows do
     for c = 1, cols do
       local val = cells[r][c]

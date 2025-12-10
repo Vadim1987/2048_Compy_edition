@@ -6,13 +6,13 @@ require("logic")
 require("graphics")
 require("controls")
 
-function love.keypressed(key)
-  controls_key(key)
-end
+love.keypressed = controls_key
 
 function love.update(dt)
   game_update_animations(dt)
-  update_replay(dt)
+  if Game.state == "replay" then
+    update_replay(dt)
+  end
 end
 
 function love.mousepressed(x, y, button, istouch, presses)

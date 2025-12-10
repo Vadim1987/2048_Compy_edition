@@ -2,18 +2,17 @@
 -- Movement 
 
 require("model")
-
-Logic = { }
+sfx = compy.audio
 
 -- read and modify board
 function get_value(indices, index)
   local row, col = indices(index)
-  return Game.cells[row][col]
+  return Game.board.cells[row][col]
 end
 
 function set_value(indices, index, value)
   local row, col = indices(index)
-  Game.cells[row][col] = value
+  Game.board.cells[row][col] = value
 end
 
 function get_line_values(indices, size)
@@ -109,8 +108,8 @@ function apply_merge_step(indices, idx, val)
   end
   set_value(indices, idx, merged)
   set_value(indices, idx + 1, nil)
-  Game.score = Game.score + merged
-  Game.empty_count = Game.empty_count + 1
+  Game.board.score = Game.board.score + merged
+  Game.board.empty_count = Game.board.empty_count + 1
 end
 
 -- merge equal neighbours in-place, update score/empty_count
@@ -184,41 +183,55 @@ function move_board(line_apply, lines)
   return moved
 end
 
+-- Move map table
+MOVES = { }
+
 -- move left on whole board
-function move_left()
+function MOVES.left()
   return move_board(line_apply_row_left, Game.rows)
 end
 
 -- move right on whole board
-function move_right()
+function MOVES.right()
   return move_board(line_apply_row_right, Game.rows)
 end
 
 -- move up on whole board
-function move_up()
+function MOVES.up()
   return move_board(line_apply_col_up, Game.cols)
 end
 
 -- move down on whole board
-function move_down()
-  return move_board(line_apply_col_down, Game.rows)
+function MOVES.down()
+  return move_board(line_apply_col_down, Game.cols)
 end
-
--- Move map table
-MOVES = {
-  left = move_left,
-  right = move_right,
-  up = move_up,
-  down = move_down
-}
 
 -- Helper: record new move to history
 function record_history(dir, new_spawn)
-  History.future = { }
-  table.insert(History.moves, {
+  History.future_moves = { }
+  setmetatable(History.future_moves, STACK)
+  History.past_moves:insert({
     dir = dir,
     spawn = new_spawn
   })
+end
+
+function check_merge()
+  Game.sound = sfx.knock
+  if Game.max_merge > 0 then
+    Game.sound = sfx.jump
+    if Game.max_merge >= 2048 then
+      Game.sound = sfx.wow
+    end
+  end
+end
+
+function check_game_over()
+  if (0 < Game.board.empty_count) or game_can_merge() then
+    return 
+  end
+  Game.state = "gameover"
+  Game.sound = sfx.gameover
 end
 
 function execute_move_logic(dir, spawn)
@@ -226,97 +239,60 @@ function execute_move_logic(dir, spawn)
   if not MOVES[dir]() then
     return false
   end
-  local new_spawn = game_add_random_tile(spawn)
+  local new_spawn
+  if spawn then
+    spawn_tile(spawn)
+    new_spawn = spawn
+  else
+    new_spawn = spawn_random_tile()
+  end
   if not spawn then
     record_history(dir, new_spawn)
   end
+  check_merge()
   check_game_over()
-  resolve_move_sound()
+  if Game.sound then Game.sound() end
   return true
 end
 
-function check_game_over()
-  if (0 < Game.empty_count) or game_can_merge() then
-    return 
-  end
-  Game.state = "gameover"
-end
-
-SoundHandlers = { }
-
-function SoundHandlers.gameover()
-  compy.audio.gameover() 
-end
-
-function SoundHandlers.play()
-  if Game.max_merge >= 2048 then
-    compy.audio.wow()
-  elseif Game.max_merge > 0 then
-    compy.audio.jump()
-  else
-    compy.audio.knock()
-  end
-end
-
-SoundHandlers.replay = SoundHandlers.play
-
-function resolve_move_sound()
-  local handler = SoundHandlers[Game.state]
-  if handler then
-    handler()
-  end
-end
-
--- Main entry point for moves
-function game_handle_move(dir)
-  if Game.state ~= "play" then
-    return 
-  end
+function new_move(dir)
   save_snapshot()
-  if execute_move_logic(dir, nil) then
-    check_game_over()
-  else
-    table.remove(History.snapshots)
-    Game.animations = { }
-  end
+  execute_move_logic(dir, nil)
 end
 
-function Logic.undo()
-  if Game.state == "replay" then 
-    return 
-  end
+function undo()
   if restore_snapshot() then
-    local last_move = table.remove(History.moves)
-    table.insert(History.future, last_move)
-    Game.state = "play"
+    local last_move = History.past_moves:remove()
+    History.future_moves:insert(last_move)
     Game.animations = { }
-    compy.audio.beep() 
+    Game.state = "play"
+    sfx.beep() 
   end
 end
 
-function Logic.redo()
-  if Game.state == "replay" then
-    return 
-  end
-  local move = table.remove(History.future)
+function redo()
+  local move = History.future_moves:remove()
   if not move then
     return 
   end
   save_snapshot()
   execute_move_logic(move.dir, move.spawn)
-  table.insert(History.moves, move)
-  check_game_over()
+  History.past_moves:insert(move)
 end
 
-function Logic.replay()
-  if Game.state == "replay" or #(History.moves) == 0 then
+function game_replay()
+  if #History.past_moves == 0 then 
     return 
   end
   Game.state = "replay"
-  game_clear()
-  Game.score = 0
+  Game.board.empty_count = Game.rows * Game.cols
+  for row = 1, Game.rows do
+    Game.board.cells[row] = { }
+  end
+  Game.board.score = 0
+  Game.animations = { }
   for _, spawn in ipairs(History.initial) do
-    game_add_random_tile(spawn)
+    spawn_tile(spawn)
   end
   Game.replay_index = 1
   Game.replay_timer = 0
@@ -324,23 +300,19 @@ end
 
 -- Helper: execute one step or finish replay
 function process_replay_step()
-  local move = History.moves[Game.replay_index]
+  local move = History.past_moves[Game.replay_index]
   if move then
     execute_move_logic(move.dir, move.spawn)
     Game.replay_index = Game.replay_index + 1
     Game.replay_timer = REPLAY_DELAY
   else
     Game.state = "play"
-    check_game_over()
   end
 end
 
 function update_replay(dt)
-  if Game.state ~= "replay" then
-    return 
-  end
   Game.replay_timer = Game.replay_timer - dt
-  if 0 < Game.replay_timer or 0 < #Game.animations then
+  if 0 < Game.replay_timer or 0 < #(Game.animations) then
     return 
   end
   process_replay_step()
