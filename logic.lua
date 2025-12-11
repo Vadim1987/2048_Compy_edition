@@ -239,19 +239,16 @@ function execute_move_logic(dir, spawn)
   if not MOVES[dir]() then
     return false
   end
-  local new_spawn
   if spawn then
     spawn_tile(deep_copy(spawn))
-    new_spawn = spawn
   else
-    new_spawn = spawn_random_tile()
-  end
-  if not spawn then
-    record_history(dir, new_spawn)
+    record_history(dir, spawn_random_tile())
   end
   check_merge()
   check_game_over()
-  if Game.sound then Game.sound() end
+  if Game.sound then
+    Game.sound()
+  end
   return true
 end
 
@@ -281,16 +278,8 @@ function redo()
 end
 
 function game_replay()
-  if #History.past_moves == 0 then 
-    return 
-  end
   Game.state = "replay"
-  Game.board.empty_count = Game.rows * Game.cols
-  for row = 1, Game.rows do
-    Game.board.cells[row] = { }
-  end
-  Game.board.score = 0
-  Game.animations = { }
+  board_clear()
   for _, spawn in ipairs(History.initial) do
     spawn_tile(spawn)
   end
@@ -305,10 +294,8 @@ function process_replay_step()
     execute_move_logic(move.dir, move.spawn)
     Game.replay_index = Game.replay_index + 1
     Game.replay_timer = REPLAY_DELAY
-  else
-    if Game.state ~= "gameover" then
-      Game.state = "play"
-    end
+  elseif Game.state ~= "gameover" then
+    Game.state = "play"
   end
 end
 

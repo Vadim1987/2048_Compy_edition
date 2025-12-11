@@ -64,13 +64,18 @@ function restore_snapshot()
 end
 
 -- reset board to empty state
-function game_clear()
+function board_clear()
   Game.board.empty_count = Game.rows * Game.cols
   for row = 1, Game.rows do
     Game.board.cells[row] = { }
   end
   Game.board.score = 0
   Game.animations = { }
+end
+
+-- reset game
+function game_clear()
+  board_clear()
   History.past_moves = { }
   History.future_moves = { }
   History.snapshots = { }
