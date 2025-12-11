@@ -227,6 +227,7 @@ function check_merge()
 end
 
 function check_game_over()
+  if Game.state == "replay" then return end
   if (0 < Game.board.empty_count) or game_can_merge() then
     return 
   end
@@ -241,7 +242,8 @@ function execute_move_logic(dir, spawn)
   end
   local new_spawn
   if spawn then
-    spawn_tile(spawn)
+   local spawn_copy = deep_copy(spawn)
+    spawn_tile(spawn_copy)
     new_spawn = spawn
   else
     new_spawn = spawn_random_tile()
@@ -307,6 +309,7 @@ function process_replay_step()
     Game.replay_timer = REPLAY_DELAY
   else
     Game.state = "play"
+    check_game_over()
   end
 end
 
