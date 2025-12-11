@@ -218,9 +218,9 @@ end
 
 function check_merge()
   Game.sound = sfx.knock
-  if Game.max_merge > 0 then
+  if 0 < Game.max_merge then
     Game.sound = sfx.jump
-    if Game.max_merge >= 2048 then
+    if 2048 <= Game.max_merge then
       Game.sound = sfx.wow
     end
   end
@@ -266,7 +266,7 @@ function undo()
     History.future_moves:insert(last_move)
     Game.animations = { }
     Game.state = "play"
-    sfx.beep() 
+    sfx.beep()
   end
 end
 
@@ -306,7 +306,7 @@ function process_replay_step()
     Game.replay_index = Game.replay_index + 1
     Game.replay_timer = REPLAY_DELAY
   else
-  if Game.state ~= "gameover" then
+    if Game.state ~= "gameover" then
       Game.state = "play"
     end
   end

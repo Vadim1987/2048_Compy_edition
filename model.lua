@@ -152,7 +152,8 @@ end
 
 -- true if at least one merge is possible on a full board
 function game_can_merge()
-  local cells, rows, cols = Game.board.cells, Game.rows, Game.cols
+  local cells, rows, cols = Game.board.cells, Game.rows, Game.
+      cols
   for r = 1, rows do
     for c = 1, cols do
       local val = cells[r][c]

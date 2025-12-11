@@ -1,4 +1,5 @@
 -- controls.lua
+
 require("model")
 require("logic")
 
@@ -40,9 +41,9 @@ gameover.r = play.r
 gameover.n = play.n
 gameover.escape = play.escape
 
-MOUSE_MAP = { 
-  "backspace", 
-  "space", 
+MOUSE_MAP = {
+  "backspace",
+  "space",
   "r",
   "n"
 }
