@@ -216,7 +216,11 @@ function DrawAnim.spawn(anim)
   gfx.push()
   gfx.translate(x + HALF_TILE_SIZE, y + HALF_TILE_SIZE)
   gfx.scale(s, s)
-  gfx.draw(TILE_CANVAS[anim.value], -HALF_TILE_SIZE, -HALF_TILE_SIZE)
+  gfx.draw(
+    TILE_CANVAS[anim.value],
+    -HALF_TILE_SIZE,
+    -HALF_TILE_SIZE
+  )
   gfx.pop()
 end
 

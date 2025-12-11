@@ -218,9 +218,9 @@ end
 
 function check_merge()
   Game.sound = sfx.knock
-  if Game.max_merge > 0 then
+  if 0 < Game.max_merge then
     Game.sound = sfx.jump
-    if Game.max_merge >= 2048 then
+    if 2048 <= Game.max_merge then
       Game.sound = sfx.wow
     end
   end
@@ -234,25 +234,26 @@ function check_game_over()
   Game.sound = sfx.gameover
 end
 
-function execute_move_logic(dir, spawn)
-  Game.max_merge = 0
-  if not MOVES[dir]() then
-    return false
-  end
-  local new_spawn
+function execute_spawn_logic(dir, spawn)
   if spawn then
     spawn_tile(deep_copy(spawn))
-    new_spawn = spawn
   else
-    new_spawn = spawn_random_tile()
+    record_history(dir, spawn_random_tile())
   end
-  if not spawn then
-    record_history(dir, new_spawn)
+end
+
+function execute_move_logic(dir, spawn)
+  Game.max_merge = 0
+  if MOVES[dir]() then
+    execute_spawn_logic(dir, spawn)
+    check_merge()
+    check_game_over()
+    if Game.sound then
+      Game.sound()
+    end
+    return true
   end
-  check_merge()
-  check_game_over()
-  if Game.sound then Game.sound() end
-  return true
+  return false
 end
 
 function new_move(dir)
@@ -266,7 +267,7 @@ function undo()
     History.future_moves:insert(last_move)
     Game.animations = { }
     Game.state = "play"
-    sfx.beep() 
+    sfx.beep()
   end
 end
 
@@ -281,16 +282,8 @@ function redo()
 end
 
 function game_replay()
-  if #History.past_moves == 0 then 
-    return 
-  end
   Game.state = "replay"
-  Game.board.empty_count = Game.rows * Game.cols
-  for row = 1, Game.rows do
-    Game.board.cells[row] = { }
-  end
-  Game.board.score = 0
-  Game.animations = { }
+  board_clear()
   for _, spawn in ipairs(History.initial) do
     spawn_tile(spawn)
   end
@@ -305,10 +298,8 @@ function process_replay_step()
     execute_move_logic(move.dir, move.spawn)
     Game.replay_index = Game.replay_index + 1
     Game.replay_timer = REPLAY_DELAY
-  else
-  if Game.state ~= "gameover" then
-      Game.state = "play"
-    end
+  elseif Game.state ~= "gameover" then
+    Game.state = "play"
   end
 end
 
