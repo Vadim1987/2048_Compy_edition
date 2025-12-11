@@ -234,22 +234,26 @@ function check_game_over()
   Game.sound = sfx.gameover
 end
 
-function execute_move_logic(dir, spawn)
-  Game.max_merge = 0
-  if not MOVES[dir]() then
-    return false
-  end
+function execute_spawn_logic(dir, spawn)
   if spawn then
     spawn_tile(deep_copy(spawn))
   else
     record_history(dir, spawn_random_tile())
   end
-  check_merge()
-  check_game_over()
-  if Game.sound then
-    Game.sound()
+end
+
+function execute_move_logic(dir, spawn)
+  Game.max_merge = 0
+  if MOVES[dir]() then
+    execute_spawn_logic(dir, spawn)
+    check_merge()
+    check_game_over()
+    if Game.sound then
+      Game.sound()
+    end
+    return true
   end
-  return true
+  return false
 end
 
 function new_move(dir)
