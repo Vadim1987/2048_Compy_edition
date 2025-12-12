@@ -116,27 +116,27 @@ function game_add_animation(kind, args)
   table.insert(Game.animations, anim)
 end
 
-function spawn_random_tile()
+function random_tile()
   local spawn = { }
   spawn.row_to, spawn.col_to = find_empty_by_index(
     love.math.random(Game.board.empty_count)
   )
   spawn.value = tile_random_value()
-  spawn_tile(spawn)
   return spawn
 end
 
 function spawn_tile(spawn)
   Game.board.cells[spawn.row_to][spawn.col_to] = spawn.value
   Game.board.empty_count = Game.board.empty_count - 1
-  game_add_animation("spawn", spawn)
+  game_add_animation("spawn", deep_copy(spawn))
+  return spawn
 end
 
 -- full reset of the game
 function game_reset()
   game_clear()
   for i = 1, START_TILES do
-    History.initial:insert(spawn_random_tile())
+    History.initial:insert(spawn_tile(random_tile()))
   end
   Game.state = "play"
 end
